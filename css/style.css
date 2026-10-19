@@ -253,15 +253,16 @@ dialog::backdrop { background: #05060bc9; backdrop-filter: blur(9px); }
 .noscript-note { padding: 20px; text-align: center; color: var(--muted); font-size: 12px; }
 #cur-dot, #cur-ring { display: none; pointer-events: none; position: fixed; z-index: 9999; left: -100px; top: -100px; border-radius: 50%; transform: translate(-50%, -50%); }
 @media (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  body.custom-cursor, body.custom-cursor a, body.custom-cursor button { cursor: none; }
-  .custom-cursor #cur-dot { display: block; width: 5px; height: 5px; background: var(--accent); }
-  .custom-cursor #cur-ring { display: block; width: 28px; height: 28px; border: 1px solid rgba(var(--accent-rgb), .4); transition: width .2s, height .2s, border-color .2s; }
-  .cursor-hover #cur-ring { width: 42px; height: 42px; border-color: var(--accent); }
+  body.custom-cursor.cursor-visible, body.custom-cursor.cursor-visible a, body.custom-cursor.cursor-visible button { cursor: none; }
+  .custom-cursor.cursor-visible #cur-dot { display: block; width: 4px; height: 4px; background: var(--accent); }
+  .custom-cursor.cursor-visible #cur-ring { display: block; width: 22px; height: 22px; border: 1px solid rgba(var(--accent-rgb), .5); background: transparent; transition: width .18s ease, height .18s ease, border-color .18s, background .18s, transform .12s ease; }
+  .custom-cursor.cursor-visible.cursor-hover #cur-ring { width: 32px; height: 32px; border-color: var(--accent); background: rgba(var(--accent-rgb), .1); }
+  .custom-cursor.cursor-visible.cursor-pressed #cur-ring { transform: translate(-50%, -50%) scale(.72); background: rgba(var(--accent-rgb), .18); }
+  body.custom-cursor.cursor-visible:has(dialog[open]) { cursor: auto; }
+  body.custom-cursor.cursor-visible dialog { cursor: auto; }
+  body.custom-cursor.cursor-visible dialog button, body.custom-cursor.cursor-visible dialog a { cursor: pointer; }
+  body.custom-cursor.cursor-visible:has(dialog[open]) #cur-dot, body.custom-cursor.cursor-visible:has(dialog[open]) #cur-ring { display: none; }
 }
-.cursor-particle { position: fixed; width: 3px; height: 3px; border-radius: 50%; background: var(--accent); pointer-events: none; z-index: 9998; animation: particle .7s ease-out forwards; }
-body.custom-cursor dialog { cursor: auto; }
-body.custom-cursor dialog button, body.custom-cursor dialog a { cursor: pointer; }
-@keyframes particle { to { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(.2); } }
 @keyframes enter { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 .hero-copy, .hero-art, .bento-grid, .links-section { animation: enter .75s ease-out both; }
 .hero-art { animation-delay: .1s; }.bento-grid { animation-delay: .15s; }.links-section { animation-delay: .2s; }

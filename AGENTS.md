@@ -25,7 +25,7 @@ Osobní český web Víta (Boříka), značka `borik.space`: představení, hudb
 | `js/app.js` | Vykreslení bia a zájmů, věk, psaní jmen, motivy, schránka, dialog, čas a klidný režim. |
 | `js/top-three.js` | Generování dvou žebříčků a karet z `SITE_CONFIG.topThree`. |
 | `js/presence.js` | Discord avatar/stav, poslední online, herní aktivita a Spotify přes Lanyard. |
-| `js/effects.js` | Canvas hvězdy, padající hvězdy, vlastní kurzor, částice a reakce záře na myš. |
+| `js/effects.js` | Canvas hvězdy, padající hvězdy, vlastní kurzor a reakce záře na myš. |
 
 Skripty se načítají přes `defer` v pořadí config → app → top-three → presence → effects. `app.js` poskytuje ostatním `window.siteStorage`, `window.siteCalm` a událost `motionchange`. Zachovej potřebné ID elementů při změně HTML, nebo současně uprav jejich použití v JS.
 
@@ -64,6 +64,8 @@ Na žádost uživatele bylo 19. 10. 2026 realizováno zhutnění sekce Moje top 
 - Změny jsou v `css/style.css` a `js/top-three.js`. Třídu `.panel` má celá skupina, jednotlivé řádky používají `.favorite-card`. Grid dvou panelů řídí `#top-three-groups`.
 
 ## Vizuální doladění
+
+Kurzor (19. 10. 2026): tečka 4 px, tenký kroužek 22 px, při hoveru odkazu nebo aktivního tlačítka 32 px s průhlednou výplní motivu. Levé tlačítko kroužek stáhne na 72 %. Sledování myši je rychlejší (časová konstanta 35 ms); částice i jejich CSS byly odstraněny. Vlastní kurzor se zobrazí až po pohybu jemného ukazatele (`cursor-visible`), při návratu hned skočí na správné místo. Odchod, blur, pointercancel, skrytí karty a klidný režim resetují stav. Dotyk ho neaktivuje. Otevřený dialog používá nativní kurzor a vlastní tečku/kroužek skrývá. Ověřeno v Edge: pohyb, hover, stisk/uvolnění/zrušení, odchod/návrat, blur, dialog, oba režimy omezeného pohybu, tři motivy a emulované dotykové zařízení; bez chyb JS. Screenshot vizuálně zkontrolován.
 
 Aktuální preference uživatele: všechny obrázky favoritů mají vyplňovat celý rámeček bez pruhů. Z položek v `config.js` byly odstraněny výjimky `imageFit: 'contain'`, takže všechny používají `object-fit: cover` s ořezem okrajů. Podpora volitelného `contain` v rendereru zůstává, ale aktuálně se nepoužívá.
 

@@ -12,7 +12,15 @@
   let auroraX = 0, auroraY = 0, targetAuroraX = 0, targetAuroraY = 0;
   let width, height, stars = [], shoots = [], frame;
   let mx = -100, my = -100, rx = -100, ry = -100;
-  let lastFrame = 0, nextShoot = 0, lastParticle = 0;
+  let lastFrame = 0, nextShoot = 0;
+  function resetCursor() {
+    document.body.classList.remove('cursor-visible', 'cursor-hover', 'cursor-pressed');
+    mx = my = rx = ry = -100;
+    targetAuroraX = targetAuroraY = 0;
+  }
+  function updateCursorHover(target) {
+    document.body.classList.toggle('cursor-hover', Boolean(target?.closest('a[href], button:not(:disabled)')));
+  }
   function resize() {
     width = innerWidth; height = innerHeight;
     const ratio = Math.min(devicePixelRatio || 1, 2);
@@ -83,7 +91,7 @@
       auroraY += (targetAuroraY - auroraY) * drift;
       auroraField.style.setProperty('--aurora-x', `${auroraX.toFixed(2)}px`);
       auroraField.style.setProperty('--aurora-y', `${auroraY.toFixed(2)}px`);
-      const easing = 1 - Math.exp(-delta / 80);
+      const easing = 1 - Math.exp(-delta / 35);
       rx += (mx - rx) * easing; ry += (my - ry) * easing;
       dot.style.left = `${mx}px`; dot.style.top = `${my}px`;
       ring.style.left = `${rx}px`; ring.style.top = `${ry}px`;
@@ -99,31 +107,39 @@
       auroraField.style.setProperty('--aurora-y', '0px');
     }
     document.body.classList.toggle('custom-cursor', finePointer.matches && !window.siteCalm);
+    if (document.hidden || window.siteCalm || !finePointer.matches) resetCursor();
     if (window.siteCalm) { shoots = []; draw(0, 0); }
     else if (!document.hidden) { lastFrame = performance.now(); frame = requestAnimationFrame(loop); }
   }
   document.addEventListener('pointermove', event => {
-    if (!finePointer.matches || window.siteCalm) return;
+    if (!finePointer.matches || window.siteCalm || event.pointerType === 'touch') return;
     mx = event.clientX; my = event.clientY;
+    if (!document.body.classList.contains('cursor-visible')) { rx = mx; ry = my; }
+    dot.style.left = `${mx}px`; dot.style.top = `${my}px`;
+    ring.style.left = `${rx}px`; ring.style.top = `${ry}px`;
+    document.body.classList.add('cursor-visible');
     targetAuroraX = (Math.max(0, Math.min(1, mx / width)) - .5) * 28;
     targetAuroraY = (Math.max(0, Math.min(1, my / height)) - .5) * 20;
     spotlight.style.background = `radial-gradient(350px circle at ${mx}px ${my}px, rgba(var(--accent-rgb), .025), transparent 70%)`;
-    document.body.classList.toggle('cursor-hover', Boolean(event.target.closest('a, button')));
-    const time = performance.now();
-    if (time - lastParticle > 65) {
-      lastParticle = time;
-      const particle = document.createElement('span'); particle.className = 'cursor-particle'; particle.setAttribute('aria-hidden', 'true');
-      particle.style.left = `${mx}px`; particle.style.top = `${my}px`;
-      particle.style.setProperty('--dx', `${(Math.random() - .5) * 32}px`); particle.style.setProperty('--dy', `${10 + Math.random() * 20}px`);
-      document.body.append(particle); setTimeout(() => particle.remove(), 750);
-    }
+    updateCursorHover(event.target);
     const card = event.target.closest('.panel');
     if (card) {
       const rect = card.getBoundingClientRect();
       card.style.setProperty('--card-x', `${mx - rect.left}px`); card.style.setProperty('--card-y', `${my - rect.top}px`);
     }
   }, { passive: true });
-  document.documentElement.addEventListener('pointerleave', () => { mx = my = -100; targetAuroraX = targetAuroraY = 0; });
+  document.addEventListener('pointerdown', event => {
+    if (event.pointerType === 'touch') { resetCursor(); return; }
+    if (event.button !== 0 || !finePointer.matches || window.siteCalm) return;
+    document.body.classList.add('cursor-pressed');
+  });
+  window.addEventListener('pointerup', () => document.body.classList.remove('cursor-pressed'));
+  window.addEventListener('pointercancel', resetCursor);
+  window.addEventListener('blur', resetCursor);
+  document.documentElement.addEventListener('pointerleave', resetCursor);
+  document.addEventListener('scroll', () => {
+    if (document.body.classList.contains('cursor-visible')) updateCursorHover(document.elementFromPoint(mx, my));
+  }, { passive: true, capture: true });
   window.addEventListener('resize', resize); window.addEventListener('motionchange', restart);
   document.addEventListener('visibilitychange', restart); finePointer.addEventListener('change', restart);
   resize(); restart();

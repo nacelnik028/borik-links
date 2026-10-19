@@ -28,9 +28,11 @@ Po uložení obnov stránku. Texty se vykreslují jako text, HTML do konfigurace
 - `js/app.js` – obsah, psaní nadpisu, motivy, čas, kopírování a rychlé menu.
 - `js/top-three.js` – karty osobních favoritů z konfigurace.
 - `js/presence.js` – živý Discord profil, herní aktivita a Spotify přes Lanyard.
-- `js/effects.js` – kurzor, částice, hvězdné pozadí, padající hvězdy a jemná reakce polární záře na myš.
+- `js/effects.js` – kurzor, hvězdné pozadí, padající hvězdy a jemná reakce polární záře na myš.
 
 ## Ovládání
+
+Na počítači myš doprovází malá tečka s tenkým kroužkem bez částic. Nad odkazem nebo tlačítkem se kroužek mírně zvětší a vyplní barvou motivu, při stisku se stáhne. V rychlém menu a klidném režimu se používá běžný kurzor; na dotykových zařízeních se vlastní kurzor nezobrazuje.
 
 Moje top 3 tvoří dva kompaktní panely s očíslovanými řádky: hry a interpreti / kapely. Na počítači jsou vedle sebe, na mobilu pod sebou. Volitelné popisy a odkazy se zobrazí pod názvem; vlastní kategorie položky se ukáže, pokud se liší od kategorie skupiny.
 
