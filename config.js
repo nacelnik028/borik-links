@@ -8,7 +8,9 @@ window.SITE_CONFIG = {
   tagline: 'Hudba ve sluchátkách. Vlastní svět v hlavě.',
   bio: `Ahojkyy, já jsem **Vít** a momentálně studuji střední školu. Je mi **{age} let**. Rád dělám nejrůznější věci, které mě baví.
 
-Miluji poslouchání **hudby** a rád hraju **hry**. Nejraději poslouchám hudební žánry **rock**, **rock-pop**, **metal** a **alternativní rock**, ale někdy si pustím i **white girl music** nebo **lofi**.`,
+  Miluji poslouchání **hudby** a rád hraju **hry**. Nejraději poslouchám hudební žánry **rock**, **rock-pop**, **metal** a **alternativní rock**, ale někdy si pustím i **white girl music** nebo **lofi**.
+
+  Jsem přátelský a společenský člověk, který se rád učí nové věci. Ale docela liny.`,
   birthday: '2010-02-20', // RRRR-MM-DD; věk se mění automaticky.
   interests: ['rock & metal', 'gaming', 'late night vibes'],
   // MOJE TOP 3 – každá skupina má vlastní žebříček od 1. do 3. místa.

@@ -33,6 +33,22 @@ svg { flex-shrink: 0; }
 .muted { color: var(--muted); }
 .accent { color: var(--accent); }
 .page-shell { max-width: 1120px; margin: auto; padding: 0 40px; position: relative; z-index: 1; }
+/* Polární záře: tři světelné pásy, barvy přebírají aktuální motiv. */
+.aurora-background { position: fixed; inset: 0; pointer-events: none; overflow: hidden; contain: strict; opacity: .38; mask-image: linear-gradient(#000 15%, #000c 45%, #0003 80%, transparent); }
+.aurora-field { position: absolute; inset: -32px; transform: translate3d(var(--aurora-x, 0px), var(--aurora-y, 0px), 0); }
+.aurora-band { position: absolute; inset: -8%; width: 116%; height: 116%; filter: blur(18px); transform-origin: 50% 30%; animation: aurora-flow 26s ease-in-out infinite alternate; }
+.aurora-band-two { opacity: .75; animation-name: aurora-drift; animation-duration: 34s; animation-delay: -17s; }
+.aurora-band-three { opacity: .55; animation-duration: 41s; animation-delay: -11s; animation-direction: alternate-reverse; }
+.aurora-background.is-paused .aurora-band { animation-play-state: paused; }
+@keyframes aurora-flow {
+  from { transform: translate3d(-2%, -1%, 0) rotate(-4deg) scaleY(.94); }
+  to { transform: translate3d(3%, 3%, 0) rotate(4deg) scaleY(1.12); }
+}
+@keyframes aurora-drift {
+  from { transform: translate3d(3%, 2%, 0) skewY(4deg) scaleX(1.04); }
+  to { transform: translate3d(-3%, -3%, 0) skewY(-5deg) scaleX(.97); }
+}
+@media (pointer: coarse) { .aurora-background { opacity: .29; } .aurora-band { filter: blur(12px); } }
 #stars, #spotlight, .ambient { position: fixed; inset: 0; pointer-events: none; }
 #stars { opacity: .42; }
 #spotlight { z-index: 0; }

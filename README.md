@@ -26,10 +26,12 @@ Po uložení obnov stránku. Texty se vykreslují jako text, HTML do konfigurace
 - `js/app.js` – obsah, psaní nadpisu, motivy, čas, kopírování a rychlé menu.
 - `js/top-three.js` – karty osobních favoritů z konfigurace.
 - `js/presence.js` – živý Discord profil, herní aktivita a Spotify přes Lanyard.
-- `js/effects.js` – kurzor, částice, hvězdné pozadí a padající hvězdy.
+- `js/effects.js` – kurzor, částice, hvězdné pozadí, padající hvězdy a jemná reakce polární záře na myš.
 
 ## Ovládání
 
 Motiv se mění dole na stránce a zůstane uložený v prohlížeči. **Ctrl+K** (na Macu **⌘K**) otevře rychlé menu; **Esc** ho zavře. Klidný režim vypne pohyb včetně psaní nadpisu. Respektuje se také systémové nastavení omezeného pohybu.
+
+Polární záře v pozadí přebírá barvy vybraného motivu. Na počítači jemně reaguje na myš, na dotykových zařízeních je tlumenější. V klidném režimu zůstane statická a při skrytí karty prohlížeče se její animace pozastaví. Intenzitu upravíš v `css/style.css` u `.aurora-background` pomocí `opacity`.
 
 Živé údaje vyžadují dostupný profil v Lanyardu a internetové připojení. Při výpadku se zobrazí nedostupnost a spojení se automaticky obnovuje. „Naposledy online“ vychází z posledního online stavu zaznamenaného tímto prohlížečem. Kopírování používá schránku na HTTPS/localhost; při nedostupnosti nabídne jméno k ručnímu zkopírování.

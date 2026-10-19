@@ -19,6 +19,22 @@
 </head>
 <body>
   <a href="#main" class="skip-link">Přeskočit na obsah</a>
+  <div class="aurora-background" id="aurora" aria-hidden="true">
+    <div class="aurora-field" id="aurora-field">
+      <svg class="aurora-band aurora-band-one" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMin slice">
+        <defs><linearGradient id="aurora-violet" x1="0" y1="0" x2="0.25" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity="0"/><stop offset=".42" stop-color="var(--accent)" stop-opacity=".65"/><stop offset="1" stop-color="var(--secondary)" stop-opacity="0"/></linearGradient></defs>
+        <path fill="url(#aurora-violet)" d="M-180 250 C80 20 310 410 630 185 S1090 220 1610 20 L1610 240 C1170 410 910 260 660 370 S140 240-180 500Z"/>
+      </svg>
+      <svg class="aurora-band aurora-band-two" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMin slice">
+        <defs><linearGradient id="aurora-blue" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--secondary)" stop-opacity="0"/><stop offset=".38" stop-color="var(--secondary)" stop-opacity=".6"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>
+        <path fill="url(#aurora-blue)" d="M-180 460 C160 170 360 150 670 260 S1170 70 1620 190 L1620 390 C1210 220 990 510 660 440 S120 290-180 660Z"/>
+      </svg>
+      <svg class="aurora-band aurora-band-three" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMin slice">
+        <defs><linearGradient id="aurora-sheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity="0"/><stop offset=".28" stop-color="var(--accent)" stop-opacity=".4"/><stop offset="1" stop-color="var(--secondary)" stop-opacity="0"/></linearGradient></defs>
+        <path fill="url(#aurora-sheen)" d="M-160 100 C260 340 420-50 850 130 S1240 410 1630 180 L1630 290 C1230 530 1040 360 830 260 S240 430-160 240Z"/>
+      </svg>
+    </div>
+  </div>
   <canvas id="stars" aria-hidden="true"></canvas>
   <div class="ambient ambient-one" aria-hidden="true"></div>
   <div class="ambient ambient-two" aria-hidden="true"></div>

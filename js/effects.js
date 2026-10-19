@@ -1,4 +1,4 @@
-/* Hvězdy, padající hvězdy a kurzor. Klidný režim zastaví pohyb. */
+/* Polární záře, hvězdy a kurzor. Klidný režim zastaví pohyb. */
 (() => {
   'use strict';
   const canvas = document.getElementById('stars');
@@ -7,6 +7,9 @@
   const dot = document.getElementById('cur-dot');
   const ring = document.getElementById('cur-ring');
   const spotlight = document.getElementById('spotlight');
+  const aurora = document.getElementById('aurora');
+  const auroraField = document.getElementById('aurora-field');
+  let auroraX = 0, auroraY = 0, targetAuroraX = 0, targetAuroraY = 0;
   let width, height, stars = [], shoots = [], frame;
   let mx = -100, my = -100, rx = -100, ry = -100;
   let lastFrame = 0, nextShoot = 0, lastParticle = 0;
@@ -48,6 +51,11 @@
     const delta = Math.min(time - lastFrame || 16, 40); lastFrame = time;
     draw(time, delta);
     if (finePointer.matches) {
+      const drift = 1 - Math.exp(-delta / 650);
+      auroraX += (targetAuroraX - auroraX) * drift;
+      auroraY += (targetAuroraY - auroraY) * drift;
+      auroraField.style.setProperty('--aurora-x', `${auroraX.toFixed(2)}px`);
+      auroraField.style.setProperty('--aurora-y', `${auroraY.toFixed(2)}px`);
       const easing = 1 - Math.exp(-delta / 80);
       rx += (mx - rx) * easing; ry += (my - ry) * easing;
       dot.style.left = `${mx}px`; dot.style.top = `${my}px`;
@@ -57,6 +65,12 @@
   }
   function restart() {
     cancelAnimationFrame(frame);
+    aurora.classList.toggle('is-paused', document.hidden || window.siteCalm);
+    if (window.siteCalm || !finePointer.matches) {
+      auroraX = auroraY = targetAuroraX = targetAuroraY = 0;
+      auroraField.style.setProperty('--aurora-x', '0px');
+      auroraField.style.setProperty('--aurora-y', '0px');
+    }
     document.body.classList.toggle('custom-cursor', finePointer.matches && !window.siteCalm);
     if (window.siteCalm) { shoots = []; draw(0, 0); }
     else if (!document.hidden) { lastFrame = performance.now(); frame = requestAnimationFrame(loop); }
@@ -64,6 +78,8 @@
   document.addEventListener('pointermove', event => {
     if (!finePointer.matches || window.siteCalm) return;
     mx = event.clientX; my = event.clientY;
+    targetAuroraX = (Math.max(0, Math.min(1, mx / width)) - .5) * 28;
+    targetAuroraY = (Math.max(0, Math.min(1, my / height)) - .5) * 20;
     spotlight.style.background = `radial-gradient(350px circle at ${mx}px ${my}px, rgba(var(--accent-rgb), .025), transparent 70%)`;
     document.body.classList.toggle('cursor-hover', Boolean(event.target.closest('a, button')));
     const time = performance.now();
@@ -80,7 +96,7 @@
       card.style.setProperty('--card-x', `${mx - rect.left}px`); card.style.setProperty('--card-y', `${my - rect.top}px`);
     }
   }, { passive: true });
-  document.documentElement.addEventListener('pointerleave', () => { mx = my = -100; });
+  document.documentElement.addEventListener('pointerleave', () => { mx = my = -100; targetAuroraX = targetAuroraY = 0; });
   window.addEventListener('resize', resize); window.addEventListener('motionchange', restart);
   document.addEventListener('visibilitychange', restart); finePointer.addEventListener('change', restart);
   resize(); restart();
