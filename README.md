@@ -38,6 +38,8 @@ Obrázky favoritů jsou uložené v `assets/favorites/`; jejich zdroje najdeš v
 
 Mobilní úvod má menší avatar a oběžné kruhy. Při poslechu se Spotify panel jemně zeleně zvýrazní; při neaktivitě nebo výpadku se vrátí do základního vzhledu.
 
+Spotify při poslechu animuje zelený ekvalizér a spodní zvukovou vlnu. Vlna je dekorativní, nereaguje na skutečný zvuk skladby. Herní aktivitu odlišují tři pomalu pulzující tečky v barvě motivu. V klidném režimu jsou indikátory statické a při skrytí karty se jejich pohyb pozastaví.
+
 Motiv se mění dole na stránce a zůstane uložený v prohlížeči. **Ctrl+K** (na Macu **⌘K**) otevře rychlé menu; **Esc** ho zavře. Klidný režim vypne pohyb včetně psaní nadpisu. Respektuje se také systémové nastavení omezeného pohybu.
 
 Polární záře v pozadí přebírá barvy vybraného motivu. Na počítači jemně reaguje na myš, na dotykových zařízeních je tlumenější. V klidném režimu zůstane statická a při skrytí karty prohlížeče se její animace pozastaví. Intenzitu upravíš v `css/style.css` u `.aurora-background` pomocí `opacity`.

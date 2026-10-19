@@ -3,6 +3,21 @@
   'use strict';
   const $ = id => document.getElementById(id);
   const storage = window.siteStorage;
+  // Dekorativní vizualizace poslechu; Lanyard neposkytuje zvuková data.
+  const wave = document.querySelector('.sound-wave');
+  for (let index = 0; index < 48; index++) {
+    const bar = document.createElement('i');
+    const envelope = Math.sin(Math.PI * (index + 1) / 49);
+    bar.style.setProperty('--bar-height', `${5 + envelope * (8 + 9 * Math.abs(Math.sin(index * 1.7)))}px`);
+    bar.style.setProperty('--bar-duration', `${1.1 + (index % 7) * .17}s`);
+    bar.style.setProperty('--bar-delay', `${-index * .19}s`);
+    wave.append(bar);
+  }
+  function updateAnimationVisibility() {
+    document.documentElement.classList.toggle('presence-paused', document.hidden);
+  }
+  document.addEventListener('visibilitychange', updateAnimationVisibility);
+  updateAnimationVisibility();
   const statusNames = { online: 'Online na Discordu', idle: 'Právě někde pryč', dnd: 'Nerušit. Jsem ve svém světě.', offline: 'Právě offline' };
   const activityLabels = { 0: 'aktuálně hraju', 1: 'streamuje', 3: 'sleduje', 5: 'soutěží v' };
   const savedOnline = storage.get('_lo');
