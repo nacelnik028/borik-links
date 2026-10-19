@@ -50,7 +50,7 @@ svg { flex-shrink: 0; }
 }
 @media (pointer: coarse) { .aurora-background { opacity: .29; } .aurora-band { filter: blur(12px); } }
 #stars, #spotlight, .ambient { position: fixed; inset: 0; pointer-events: none; }
-#stars { opacity: .42; }
+#stars { opacity: .9; }
 #spotlight { z-index: 0; }
 .ambient { inset: auto; width: 700px; height: 700px; border-radius: 50%; filter: blur(85px); opacity: .13; transition: background 1s; }
 .ambient-one { top: -360px; right: -180px; background: radial-gradient(circle, var(--accent), transparent 65%); }

@@ -20,15 +20,42 @@
     canvas.style.width = `${width}px`; canvas.style.height = `${height}px`;
     if (!ctx) return;
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-    stars = Array.from({ length: Math.min(160, Math.floor(width * height / 8000)) }, () => ({ x: Math.random() * width, y: Math.random() * height, radius: Math.random() * 1.1 + .2, opacity: Math.random() * .4 + .1, phase: Math.random() * 6.28 }));
+    // Hustota roste i na širokých monitorech; jasné hvězdy jsou vidět přes záři.
+    const count = Math.min(650, Math.max(65, Math.floor(width * height / 9000)));
+    stars = Array.from({ length: count }, () => {
+      const brightness = Math.random();
+      const bright = brightness > .85;
+      return {
+        x: Math.random() * width,
+        y: Math.random() * height,
+        radius: bright ? 1.4 + Math.random() * .8 : .65 + Math.random() * .7,
+        opacity: bright ? .8 + Math.random() * .2 : .35 + Math.random() * .35,
+        phase: Math.random() * Math.PI * 2,
+        bright,
+        sparkle: brightness > .97,
+      };
+    });
     if (window.siteCalm) draw(0, 0);
   }
   function draw(time, delta) {
     if (!ctx) return;
     ctx.clearRect(0, 0, width, height);
     for (const star of stars) {
-      const alpha = star.opacity * (.7 + .3 * Math.sin(time / 1800 + star.phase));
-      ctx.fillStyle = `rgba(221,219,242,${alpha})`;
+      const alpha = star.opacity * (.82 + .18 * Math.sin(time / 2200 + star.phase));
+      if (star.bright) {
+        ctx.fillStyle = `rgba(192,204,255,${alpha * .08})`;
+        ctx.beginPath(); ctx.arc(star.x, star.y, star.radius * 3.5, 0, Math.PI * 2); ctx.fill();
+      }
+      if (star.sparkle) {
+        const ray = star.radius * 2.8;
+        ctx.strokeStyle = `rgba(228,232,255,${alpha * .35})`;
+        ctx.lineWidth = .7;
+        ctx.beginPath();
+        ctx.moveTo(star.x - ray, star.y); ctx.lineTo(star.x + ray, star.y);
+        ctx.moveTo(star.x, star.y - ray); ctx.lineTo(star.x, star.y + ray);
+        ctx.stroke();
+      }
+      ctx.fillStyle = `rgba(235,238,255,${alpha})`;
       ctx.beginPath(); ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2); ctx.fill();
     }
     if (window.siteCalm) return;
