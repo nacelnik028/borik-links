@@ -16,23 +16,24 @@ window.SITE_CONFIG = {
   // MOJE TOP 3 – každá skupina má vlastní žebříček od 1. do 3. místa.
   // title = název, category = štítek na kartách, items = tři položky v pořadí.
   // U položky můžeš doplnit description (komentář) a url (https:// odkaz).
+  // image = cesta k obrázku; imageFit: 'contain' zobrazí celý obrázek bez ořezu.
   topThree: [
     {
       title: 'Hry',
       category: 'Hra',
       items: [
-        { title: 'Kingdom Come: Deliverance II', description: '', url: '' },
-        { title: 'Cyberpunk 2077', description: '', url: '' },
-        { title: 'RimWorld', description: '', url: '' },
+        { title: 'Kingdom Come: Deliverance II', description: '', url: '', image: 'assets/favorites/kingdom-come-deliverance-2.jpg' },
+        { title: 'Cyberpunk 2077', description: '', url: '', image: 'assets/favorites/cyberpunk-2077.jpg' },
+        { title: 'RimWorld', description: '', url: '', image: 'assets/favorites/rimworld.jpg' },
       ],
     },
     {
       title: 'Interpreti / kapely',
       category: 'Hudba',
       items: [
-        { title: 'Connor Kaufmann', description: '', url: '' },
-        { title: 'Bohnes', description: '', url: '' },
-        { title: 'Autumn Kings', description: '', url: '' },
+        { title: 'Connor Kauffman', description: '', url: '', image: 'assets/favorites/connor-kauffman.jpg' },
+        { title: 'Bohnes', description: '', url: '', image: 'assets/favorites/bohnes.jpg' },
+        { title: 'Autumn Kings', description: '', url: '', image: 'assets/favorites/autumn-kings.jpg' },
       ],
     },
   ],

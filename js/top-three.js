@@ -30,6 +30,20 @@
     }
     const rank = textElement('span', 'favorite-rank', String(index + 1).padStart(2, '0'));
     rank.setAttribute('aria-hidden', 'true');
+    card.append(rank);
+    if (title && typeof entry.image === 'string' && entry.image.trim()) {
+      const image = document.createElement('img');
+      image.className = 'favorite-image';
+      image.alt = ''; // Název je hned vedle; čtečka jej nemusí opakovat.
+      image.width = 48;
+      image.height = 48;
+      image.loading = 'lazy';
+      image.decoding = 'async';
+      if (entry.imageFit === 'contain') image.classList.add('favorite-image-contain');
+      image.onerror = () => image.remove();
+      image.src = entry.image;
+      card.append(image);
+    }
     const content = document.createElement('div');
     content.className = 'favorite-content';
     if (title && entry.category && entry.category !== category) {
@@ -41,7 +55,7 @@
       const hint = textElement('span', 'favorite-link', 'Prozkoumat ↗');
       content.append(hint);
     }
-    card.append(rank, content);
+    card.append(content);
     item.append(card);
     return item;
   }

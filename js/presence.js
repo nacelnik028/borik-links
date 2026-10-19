@@ -41,6 +41,7 @@
   }
   function showUnavailable() {
     clearInterval(spotifyTimer); spotify = null; currentStatus = null;
+    $('sp-card').closest('.music-panel').classList.remove('is-playing');
     $('presence-status').textContent = 'Živý stav je teď nedostupný'; $('sdot').className = 'sdot unknown'; $('lseen').textContent = '';
     $('sp-card').style.display = 'none'; $('sp-idle').style.display = '';
     $('sp-idle-title').textContent = 'Malá pauza v signálu.'; $('sp-idle-detail').textContent = 'Spotify stav se teď nepodařilo načíst.';
@@ -76,6 +77,7 @@
     }
     clearInterval(spotifyTimer);
     spotify = data.spotify?.timestamps ? data.spotify : null;
+    $('sp-card').closest('.music-panel').classList.toggle('is-playing', Boolean(spotify));
     $('sp-card').style.display = spotify ? 'block' : 'none'; $('sp-idle').style.display = spotify ? 'none' : '';
     $('sp-idle-title').textContent = 'Chvilka ticha.'; $('sp-idle-detail').textContent = 'Zrovna nic neposlouchám.';
     if (spotify) {

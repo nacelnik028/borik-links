@@ -137,6 +137,10 @@ h1 { margin-top: 23px; font-family: var(--display); letter-spacing: -1.8px; font
 .live-column { display: grid; grid-template-rows: 1.08fr 1fr; gap: 16px; min-width: 0; }
 .music-panel, .activity-panel { padding: 25px; display: flex; flex-direction: column; }
 .music-panel { background: linear-gradient(135deg, #8ce2aa05, transparent 70%), var(--panel); }
+.music-panel.is-playing { border-color: #8ce2aa40; background: radial-gradient(ellipse at 0 45%, #8ce2aa16, transparent 70%), var(--panel); }
+.music-panel.is-playing .sp-art { box-shadow: 0 0 28px #8ce2aa25, 0 6px 18px #0005; }
+.music-panel.is-playing .now-label { color: var(--green); }
+.music-panel.is-playing .sound-wave { opacity: .3; }
 .live-dot { height: 5px; width: 5px; border-radius: 50%; background: #8ce2aa; box-shadow: 0 0 9px #8ce2aa30; }
 .service-label { font: 8px var(--display); letter-spacing: 1px; color: #7eab8c; }
 .idle-state { display: flex; align-items: center; gap: 16px; flex: 1; padding: 8px 0 14px; position: relative; z-index: 1; }
@@ -149,7 +153,7 @@ h1 { margin-top: 23px; font-family: var(--display); letter-spacing: -1.8px; font
 .activity-footnote { color: #71717f; font-size: 9px; margin-top: 18px; border-top: 1px solid var(--line); padding-top: 12px; }
 .activity-panel .panel-topline svg { color: var(--muted); }
 .sp-body, .act-card { display: flex; align-items: center; gap: 13px; }
-.sp-art { width: 63px; height: 63px; border-radius: 10px; object-fit: cover; background: #ffffff07; }
+.sp-art { width: 63px; height: 63px; flex-shrink: 0; border-radius: 10px; object-fit: cover; background: #ffffff07; }
 .sp-info, .act-info { flex: 1; min-width: 0; }
 .now-label { display: block; color: var(--accent); font: 8px var(--display); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
 .sp-song, #act-name { font: 500 15px/1.4 var(--display); }
@@ -176,12 +180,14 @@ h1 { margin-top: 23px; font-family: var(--display); letter-spacing: -1.8px; font
 .top-three-grid { padding: 0; margin: 0; list-style: none; }
 .top-three-item { min-width: 0; }
 .top-three-item + .top-three-item { border-top: 1px solid var(--line); }
-.favorite-card { display: flex; align-items: center; gap: 16px; min-height: 64px; padding: 14px 0; border-radius: 6px; }
+.favorite-card { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 12px 0; border-radius: 6px; }
 a.favorite-card { transition: background .2s; }
 a.favorite-card:hover { background: rgba(var(--accent-rgb), .06); }
 a.favorite-card:hover .favorite-link { color: var(--text); }
 a.favorite-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.favorite-rank { flex: 0 0 26px; font: 500 13px var(--display); color: var(--muted); font-variant-numeric: tabular-nums; }
+.favorite-rank { flex: 0 0 20px; font: 500 11px var(--display); color: var(--muted); font-variant-numeric: tabular-nums; }
+.favorite-image { display: block; flex: 0 0 48px; width: 48px; height: 48px; object-fit: cover; border: 1px solid var(--line); border-radius: 8px; background: #0c0d12; }
+.favorite-image-contain { object-fit: contain; }
 .top-three-item:first-child .favorite-rank { color: var(--accent); }
 .favorite-content { min-width: 0; flex: 1; overflow-wrap: anywhere; }
 .favorite-category { display: block; margin-bottom: 4px; font: 9px var(--display); letter-spacing: 1px; text-transform: uppercase; color: var(--accent); }
@@ -270,7 +276,7 @@ html.calm { scroll-behavior: auto; }
   .topbar nav { gap: 18px; font-size: 11px; }
   .command-label, .command-trigger kbd { display: none; }
   .command-trigger { width: 34px; height: 34px; justify-content: center; }
-  .hero { grid-template-columns: minmax(0, 1fr); padding: 45px 0 25px; }
+  .hero { grid-template-columns: minmax(0, 1fr); min-height: 0; padding: 32px 0 30px; }
   .hero-copy { text-align: center; }
   .hero-copy > .eyebrow { justify-content: center; font-size: 9px; }
   #greeting { font-size: 33px; }
@@ -278,10 +284,19 @@ html.calm { scroll-behavior: auto; }
   .name-line.long-name { font-size: clamp(34px, 9.5vw, 54px); min-height: 1.8em; padding-top: 14px; }
   .hero-tagline { margin: auto; max-width: 290px; font-size: 13px; }
   .hero-actions { justify-content: center; margin-top: 22px; gap: 20px; }
-  .hero-meta { justify-content: center; margin-top: 28px; }
-  .hero-art { width: min(340px, 100%); margin: -2px auto -5px; height: 310px; transform: scale(.86); }
-  .orbit-label { bottom: 29px; }#lseen { top: 100%; }
-  .orbit-caption { top: -10px; right: 3px; }.art-coordinate { bottom: -9px; }
+  .hero-meta { justify-content: center; margin-top: 20px; }
+  .hero-art { width: min(280px, 100%); margin: 12px auto 4px; height: 220px; transform: none; }
+  .hero-art::before { width: 210px; height: 210px; }
+  .orbit { width: 210px; height: 210px; }
+  .orbit-two { width: 174px; height: 174px; }
+  .avatar-core { width: 120px; height: 120px; padding: 6px; border-radius: 30px; }
+  .avatar-inner { border-radius: 24px; }
+  #av-fb { font-size: 62px; }
+  .orbit-label { bottom: 10px; transform: none; max-width: 100%; text-align: center; }
+  #lseen { top: 100%; }
+  .orbit-caption, .art-coordinate { display: none; }
+  .spark-one { right: 22px; top: 32px; font-size: 24px; }
+  .spark-two { left: 25px; bottom: 65px; font-size: 18px; }
   .bento-grid { grid-template-columns: 1fr; }
   .bio-panel { padding: 25px; }
   .bio-text { font-size: 13px; }
@@ -303,7 +318,7 @@ html.calm { scroll-behavior: auto; }
   .theme-options button { flex: 1; justify-content: center; padding: 10px; }
   footer { gap: 9px; font-size: 9px; padding-top: 20px; }.motion-toggle { font-size: 9px; padding: 5px; }
 }
-@media (max-width: 360px) { .page-shell { padding: 0 16px; } .topbar nav { gap: 12px; } .section-aside { display: none; } .hero-actions { gap: 12px; } .primary-button { padding: 12px; gap: 15px; } .hero-art { transform: scale(.78); } }
+@media (max-width: 360px) { .page-shell { padding: 0 16px; } .topbar nav { gap: 12px; } .section-aside { display: none; } .hero-actions { gap: 12px; } .primary-button { padding: 12px; gap: 15px; } }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation: none !important; transition: none !important; }

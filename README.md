@@ -34,6 +34,10 @@ Po uložení obnov stránku. Texty se vykreslují jako text, HTML do konfigurace
 
 Moje top 3 tvoří dva kompaktní panely s očíslovanými řádky: hry a interpreti / kapely. Na počítači jsou vedle sebe, na mobilu pod sebou. Volitelné popisy a odkazy se zobrazí pod názvem; vlastní kategorie položky se ukáže, pokud se liší od kategorie skupiny.
 
+Obrázky favoritů jsou uložené v `assets/favorites/`; jejich zdroje najdeš v [SOURCES.md](assets/favorites/SOURCES.md). U položky v `config.js` uprav `image` (cestu k obrázku). Všechny aktuální obrázky vyplňují celý rámeček s ořezem okrajů (`cover`). Volitelné `imageFit: 'contain'` by zobrazilo celý obrázek bez ořezu, ale s volným místem po stranách. Bez obrázku nebo při chybě načtení zůstane číslo a název, bez náhradních iniciál.
+
+Mobilní úvod má menší avatar a oběžné kruhy. Při poslechu se Spotify panel jemně zeleně zvýrazní; při neaktivitě nebo výpadku se vrátí do základního vzhledu.
+
 Motiv se mění dole na stránce a zůstane uložený v prohlížeči. **Ctrl+K** (na Macu **⌘K**) otevře rychlé menu; **Esc** ho zavře. Klidný režim vypne pohyb včetně psaní nadpisu. Respektuje se také systémové nastavení omezeného pohybu.
 
 Polární záře v pozadí přebírá barvy vybraného motivu. Na počítači jemně reaguje na myš, na dotykových zařízeních je tlumenější. V klidném režimu zůstane statická a při skrytí karty prohlížeče se její animace pozastaví. Intenzitu upravíš v `css/style.css` u `.aurora-background` pomocí `opacity`.
