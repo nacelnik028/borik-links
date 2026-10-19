@@ -22,33 +22,32 @@
     const item = document.createElement('li');
     item.className = 'top-three-item';
     const card = document.createElement(url ? 'a' : 'article');
-    card.className = `panel favorite-card${title ? '' : ' favorite-pending'}`;
+    card.className = `favorite-card${title ? '' : ' favorite-pending'}`;
     if (url) {
       card.href = url;
       card.target = '_blank';
       card.rel = 'noopener noreferrer';
     }
-    const visual = document.createElement('div');
-    visual.className = 'favorite-visual';
-    visual.setAttribute('aria-hidden', 'true');
-    visual.append(textElement('span', 'favorite-rank', String(index + 1).padStart(2, '0')));
-    visual.append(textElement('span', 'favorite-spark', index === 0 ? '✦' : index === 1 ? '✳' : '✧'));
+    const rank = textElement('span', 'favorite-rank', String(index + 1).padStart(2, '0'));
+    rank.setAttribute('aria-hidden', 'true');
     const content = document.createElement('div');
     content.className = 'favorite-content';
-    content.append(textElement('span', 'favorite-category', title ? entry.category || category || 'Osobní favorit' : 'Ještě vybírám'));
+    if (title && entry.category && entry.category !== category) {
+      content.append(textElement('span', 'favorite-category', entry.category));
+    }
     content.append(textElement('h4', 'favorite-title', title || 'Výběr už brzy.'));
     if (entry.description && title) content.append(textElement('p', 'favorite-description', entry.description));
     if (url) {
       const hint = textElement('span', 'favorite-link', 'Prozkoumat ↗');
       content.append(hint);
     }
-    card.append(visual, content);
+    card.append(rank, content);
     item.append(card);
     return item;
   }
   for (const [groupIndex, group] of groups.entries()) {
     const section = document.createElement('section');
-    section.className = 'favorite-group';
+    section.className = 'panel favorite-group';
     const heading = textElement('h3', 'favorite-group-heading', group.title);
     heading.id = `favorite-group-${groupIndex}`;
     section.setAttribute('aria-labelledby', heading.id);

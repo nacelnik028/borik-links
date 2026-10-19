@@ -2,6 +2,8 @@
 
 Statický web bez buildu a závislostí. Otevři `index.html` v prohlížeči nebo nahraj projekt na statický hosting.
 
+Kontext pro další chaty a úpravy projektu je v [AGENTS.md](AGENTS.md): mapa souborů, fungování webu a návrhy dalšího vývoje.
+
 ## Jak změnit úvodní text
 
 Otevři **`config.js`**. Texty jsou na jednom místě:
@@ -29,6 +31,8 @@ Po uložení obnov stránku. Texty se vykreslují jako text, HTML do konfigurace
 - `js/effects.js` – kurzor, částice, hvězdné pozadí, padající hvězdy a jemná reakce polární záře na myš.
 
 ## Ovládání
+
+Moje top 3 tvoří dva kompaktní panely s očíslovanými řádky: hry a interpreti / kapely. Na počítači jsou vedle sebe, na mobilu pod sebou. Volitelné popisy a odkazy se zobrazí pod názvem; vlastní kategorie položky se ukáže, pokud se liší od kategorie skupiny.
 
 Motiv se mění dole na stránce a zůstane uložený v prohlížeči. **Ctrl+K** (na Macu **⌘K**) otevře rychlé menu; **Esc** ho zavře. Klidný režim vypne pohyb včetně psaní nadpisu. Respektuje se také systémové nastavení omezeného pohybu.
 
