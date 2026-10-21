@@ -122,6 +122,14 @@
   window.addEventListener('motionchange', restartTyping);
   document.addEventListener('visibilitychange', restartTyping);
   const clockFormat = new Intl.DateTimeFormat('cs-CZ', { timeZone: 'Europe/Prague', hour: '2-digit', minute: '2-digit', hour12: false });
-  function updateClock() { $('local-time').textContent = `${clockFormat.format(new Date())} · MŮJ ČAS`; }
-  updateClock(); setInterval(updateClock, 30_000);
+  let clockTimer;
+  function updateClock() {
+    clearTimeout(clockTimer);
+    $('local-time').textContent = `${clockFormat.format(new Date())} · MŮJ ČAS`;
+    // Každý další termín odvozujeme od skutečného času, aby se zpoždění nesčítalo.
+    if (!document.hidden) clockTimer = setTimeout(updateClock, 60_000 - Date.now() % 60_000);
+  }
+  updateClock();
+  document.addEventListener('visibilitychange', updateClock);
+  window.addEventListener('pageshow', updateClock);
 })();
