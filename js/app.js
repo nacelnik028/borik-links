@@ -72,7 +72,7 @@
   $('cycle-theme').addEventListener('click', () => {
     const next = themes[(themes.indexOf(document.documentElement.dataset.theme) + 1) % themes.length];
     setTheme(next); dialog.close();
-    toast(`Nová atmosféra: ${next.charAt(0).toUpperCase() + next.slice(1)}`);
+    toast(`Barevný motiv: ${next.charAt(0).toUpperCase() + next.slice(1)}`);
   });
   document.querySelectorAll('[data-copy-discord]').forEach(button => button.addEventListener('click', async () => {
     dialog.close();

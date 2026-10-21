@@ -18,8 +18,25 @@
   }
   document.addEventListener('visibilitychange', updateAnimationVisibility);
   updateAnimationVisibility();
-  const statusNames = { online: 'Online na Discordu', idle: 'Právě někde pryč', dnd: 'Nerušit. Jsem ve svém světě.', offline: 'Právě offline' };
-  const activityLabels = { 0: 'aktuálně hraju', 1: 'streamuje', 3: 'sleduje', 5: 'soutěží v' };
+  const statusNames = { online: 'Online na Discordu', idle: 'Nečinný na Discordu', dnd: 'Nerušit', offline: 'Právě offline' };
+  // Discord type 0 (Playing) zahrnuje i aplikace. Rozlišujeme jen přesné
+  // známé názvy; neznámé aktivity neodhadujeme podle slov ani obrázků.
+  const knownActivityKinds = new Map([
+    ['Visual Studio Code', 'app'],
+    ['Kingdom Come: Deliverance II', 'game'],
+    ['Cyberpunk 2077', 'game'],
+    ['RimWorld', 'game'],
+  ]);
+  const activityLabels = { 1: 'Právě streamuju', 3: 'Právě sleduju', 5: 'Právě soutěžím v' };
+  function describeActivity(activity) {
+    const kind = activity.type === 0 ? knownActivityKinds.get(activity.name) : null;
+    if (kind === 'game') return { label: 'Právě hraju', icon: '🎮' };
+    if (kind === 'app') return { label: 'Právě používám', icon: '💻' };
+    return {
+      label: activityLabels[activity.type] || 'Právě běží',
+      icon: activity.type === 1 || activity.type === 3 ? '📺' : activity.type === 5 ? '🏆' : '◈',
+    };
+  }
   const savedOnline = storage.get('_lo');
   let lastOnline = savedOnline && Number.isFinite(Date.parse(savedOnline)) ? new Date(savedOnline) : null;
   let spotifyTimer, heartbeat, retryTimer, staleTimer, socket;
@@ -59,9 +76,10 @@
     $('sp-card').closest('.music-panel').classList.remove('is-playing');
     $('presence-status').textContent = 'Živý stav je teď nedostupný'; $('sdot').className = 'sdot unknown'; $('lseen').textContent = '';
     $('sp-card').style.display = 'none'; $('sp-idle').style.display = '';
-    $('sp-idle-title').textContent = 'Malá pauza v signálu.'; $('sp-idle-detail').textContent = 'Spotify stav se teď nepodařilo načíst.';
+    $('sp-idle-title').textContent = 'Spotify není dostupné'; $('sp-idle-detail').textContent = 'Stav poslechu se teď nepodařilo načíst.';
     $('act-card').style.display = 'none'; $('act-idle').style.display = '';
-    $('act-idle-title').textContent = 'Signál na cestě.'; $('act-idle-detail').textContent = 'Zkouším znovu připojit Discord.';
+    $('act-card').closest('.activity-panel').classList.remove('is-active');
+    $('act-idle-title').textContent = 'Discord není dostupný'; $('act-idle-detail').textContent = 'Zkouším se znovu připojit.';
   }
   function applyPresence(data) {
     clearTimeout(staleTimer); retry = 0;
@@ -77,12 +95,14 @@
     updateLastSeen();
     const activity = data.activities?.find(item => item.type !== 2 && item.type !== 4);
     $('act-card').style.display = activity ? 'flex' : 'none'; $('act-idle').style.display = activity ? 'none' : '';
-    $('act-idle-title').textContent = 'Mezi dvěma světy.'; $('act-idle-detail').textContent = 'Zrovna nic nehraju.';
+    $('act-card').closest('.activity-panel').classList.toggle('is-active', Boolean(activity));
+    $('act-idle-title').textContent = 'Žádná aktivita'; $('act-idle-detail').textContent = 'Discord teď žádnou aktivitu neukazuje.';
     if (activity) {
-      $('act-label').textContent = activityLabels[activity.type] || 'aktuálně'; $('act-name').textContent = activity.name; $('act-name').title = activity.name;
+      const presentation = describeActivity(activity);
+      $('act-label').textContent = presentation.label; $('act-name').textContent = activity.name; $('act-name').title = activity.name;
       $('act-detail').textContent = activity.details || activity.state || '';
       const wrap = $('act-icon-wrap');
-      const fallback = activity.type === 3 ? '📺' : activity.type === 5 ? '🏆' : '🎮';
+      const fallback = presentation.icon;
       wrap.textContent = fallback;
       const source = activityImage(activity);
       if (source) {
@@ -94,7 +114,7 @@
     spotify = data.spotify?.timestamps ? data.spotify : null;
     $('sp-card').closest('.music-panel').classList.toggle('is-playing', Boolean(spotify));
     $('sp-card').style.display = spotify ? 'block' : 'none'; $('sp-idle').style.display = spotify ? 'none' : '';
-    $('sp-idle-title').textContent = 'Chvilka ticha.'; $('sp-idle-detail').textContent = 'Zrovna nic neposlouchám.';
+    $('sp-idle-title').textContent = 'Teď tu nic nehraje'; $('sp-idle-detail').textContent = 'Spotify teď žádný poslech neukazuje.';
     if (spotify) {
       $('sp-song').textContent = spotify.song; $('sp-song').title = spotify.song; $('sp-artist').textContent = spotify.artist;
       setImage($('sp-art'), spotify.album_art_url);

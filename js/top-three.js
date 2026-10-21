@@ -52,7 +52,9 @@
     content.append(textElement('h4', 'favorite-title', title || 'Výběr už brzy.'));
     if (entry.description && title) content.append(textElement('p', 'favorite-description', entry.description));
     if (url) {
-      const hint = textElement('span', 'favorite-link', 'Prozkoumat ↗');
+      const host = new URL(url).hostname;
+      const destination = host === 'store.steampowered.com' ? 'Steam' : host === 'open.spotify.com' ? 'Spotify' : 'Otevřít';
+      const hint = textElement('span', 'favorite-link', `${destination} ↗`);
       content.append(hint);
     }
     card.append(content);
