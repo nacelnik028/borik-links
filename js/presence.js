@@ -3,6 +3,7 @@
   'use strict';
   const $ = id => document.getElementById(id);
   const storage = window.siteStorage;
+  $('discord-profile').href = `https://discord.com/users/${encodeURIComponent(window.SITE_CONFIG.discordId)}`;
   // Dekorativní vizualizace poslechu; Lanyard neposkytuje zvuková data.
   const wave = document.querySelector('.sound-wave');
   for (let index = 0; index < 48; index++) {
@@ -63,6 +64,22 @@
     $('sp-fill').style.width = `${duration > 0 ? elapsed / duration * 100 : 0}%`;
     $('sp-el').textContent = formatTime(elapsed); $('sp-tot').textContent = formatTime(duration);
   }
+  function updateSpotifyLinks(track) {
+    // Spotify track ID je 22 znaků base62. Neúplné údaje nesmějí ponechat starý cíl.
+    const validId = typeof track?.track_id === 'string' && /^[A-Za-z0-9]{22}$/.test(track.track_id);
+    const url = validId ? `https://open.spotify.com/track/${track.track_id}` : null;
+    for (const id of ['sp-art-link', 'sp-song', 'sp-link']) {
+      const link = $(id);
+      if (url) {
+        link.href = url;
+        link.setAttribute('aria-label', `Otevřít skladbu ${track.song || 'bez názvu'}${track.artist ? ` – ${track.artist}` : ''} ve Spotify v nové kartě`);
+      } else {
+        link.removeAttribute('href');
+        link.removeAttribute('aria-label');
+      }
+    }
+    $('sp-link').hidden = !url;
+  }
   function setImage(element, source, fallback) {
     if (source && element.getAttribute('src') === source && (!element.complete || element.naturalWidth > 0)) return;
     element.classList.remove('on');
@@ -85,6 +102,7 @@
   }
   function showUnavailable() {
     clearInterval(spotifyTimer); spotify = null; currentStatus = null;
+    updateSpotifyLinks(null);
     $('sp-card').closest('.music-panel').classList.remove('is-playing');
     $('presence-status').textContent = 'Živý stav je teď nedostupný'; $('sdot').className = 'sdot unknown'; $('lseen').textContent = '';
     $('sp-card').style.display = 'none'; $('sp-idle').style.display = '';
@@ -126,14 +144,13 @@
     }
     clearInterval(spotifyTimer);
     spotify = data.spotify?.timestamps ? data.spotify : null;
+    updateSpotifyLinks(spotify);
     $('sp-card').closest('.music-panel').classList.toggle('is-playing', Boolean(spotify));
     $('sp-card').style.display = spotify ? 'block' : 'none'; $('sp-idle').style.display = spotify ? 'none' : '';
     $('sp-idle-title').textContent = 'Teď tu nic nehraje'; $('sp-idle-detail').textContent = 'Spotify teď žádný poslech neukazuje.';
     if (spotify) {
       $('sp-song').textContent = spotify.song; $('sp-song').title = spotify.song; $('sp-artist').textContent = spotify.artist;
       setImage($('sp-art'), spotify.album_art_url);
-      $('sp-link').hidden = !spotify.track_id;
-      if (spotify.track_id) $('sp-link').href = `https://open.spotify.com/track/${encodeURIComponent(spotify.track_id)}`;
       updateProgress(); spotifyTimer = setInterval(updateProgress, 1000);
     }
   }

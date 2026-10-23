@@ -32,8 +32,8 @@ Skripty se načítají přes `defer` v pořadí config → app → top-three →
 ## Obsah a rozložení
 
 1. Horní lišta: značka, O mně, Odkazy, rychlé menu.
-2. Hero: psaný nadpis, krátké „Hudba, hry a něco o mně.“, tlačítka a Discord avatar s orbitální dekorací.
-3. `#about`: bio vlevo, Spotify a aktuální aktivita v pravém sloupci.
+2. Hero: psaný nadpis, krátké „Hudba, hry a něco o mně.“, tlačítka a klikatelný Discord avatar s orbitální dekorací; cíl profilu se odvozuje z `SITE_CONFIG.discordId`.
+3. `#about`: bio vlevo, Spotify a aktuální aktivita v pravém sloupci. Sloupce jsou zarovnané nahoru a mají přirozenou výšku podle obsahu, bio se nenatahuje podle živých panelů.
 4. `#top-three`: „Moje top 3“, panely Hry a Interpreti / kapely vedle sebe, na mobilu pod sebou.
 5. `#links`: Instagram, GitHub, Steam, Discord, Spotify, TikTok.
 6. Volba motivu a patička s klidným režimem.
@@ -51,6 +51,19 @@ Aktuální hry v pořadí: Kingdom Come: Deliverance II, Cyberpunk 2077, RimWorl
 - Klidný režim i `prefers-reduced-motion` omezují pohyb. Systémové omezení pohybu nelze tlačítkem přebít. Animace reagují na skrytí karty, vlastní kurzor na jemný ukazatel.
 - Lanyard: `wss://api.lanyard.rest/socket`, odběr podle `discordId`, heartbeat, timeout 12 s a opakování spojení s prodlevou rostoucí od 3 do 30 s.
 - Rozlišují se načítání, neaktivita a nedostupnost služby. „Naposledy online“ není úplná historie Discordu. Spotify progress běží po sekundě; živá data vyžadují internet a profil dostupný přes Lanyard.
+- Obal, název skladby a „Otevřít ve Spotify“ sdílejí cíl `https://open.spotify.com/track/{track_id}`. `updateSpotifyLinks` přijímá ID jako řetězec 22 alfanumerických znaků; při chybějícím/neplatném ID odebere všem třem prvkům `href` i přístupný název odkazu a skryje pouze „Otevřít ve Spotify“. Obal a název zůstávají viditelné, bez role odkazu a bez zastávky Tab. Při neaktivitě nebo výpadku se cíle také vymažou. Avatar i všechny tři Spotify odkazy otevírají novou kartu přes `target="_blank" rel="noopener noreferrer"`.
+
+## Klikatelné živé údaje a rozložení 23. 10. 2026
+
+Realizovány tři požadované úpravy v HTML, CSS a `presence.js`. Při prvním čtení byly AGENTS.md a presence.js necommitnuté; po přerušení a pokračování už byl pracovní strom čistý a opravy byly v commitu `81c56f8`. Všechny předchozí opravy jsou zachované.
+
+- `#discord-profile` obaluje původní avatar včetně iniciály a stavové tečky. Odkaz se nastavuje z konfigurace při inicializaci, nezávisle na dostupnosti Lanyardu. Má český přístupný název, původní jemný hover a 3px focus v barvě motivu; orbity a popisek stavu zůstávají.
+- `#sp-art-link` a `#sp-song` jsou stabilní elementy, které získávají/pozbývají `href` podle aktuální skladby. Při změně platné skladby se zachovává focus a aktualizují se cíle i přístupné názvy všech tří odkazů. Obal má samostatný 63px wrapper, název se dál zkracuje výpustkou. Hover a 2px focus jsou viditelné. Progress, animace a všechny stavy panelů zůstávají.
+- `.bento-grid` používá `align-items: start`, `.live-column` dvě automaticky vysoké řádky. Bio už nepřebírá výšku pravého sloupce; při kontrolním aktivním stavu na 1440 px se zkrátilo přibližně o 100 px bez změny obsahu. Hero má na desktopu menší spodní odsazení (26 px) a nemá pevnou minimální výšku; odstraněna i vyšší výšková výjimka pro tablet. Mobilní hero a pořadí panelů pod sebou zůstávají.
+
+Ověření: headless Microsoft Edge přes Python Playwright na localhostu, 1440/850/660/390/360 px × Violet/Aurora/Sunset × běžný/klidný režim. Aktivní, neaktivní, nedostupné a kombinované stavy panelů, dlouhé názvy včetně textu bez mezer; bez přetékání, překryvů či chyb JS/konzole. Výška bia se nemění podle stavu pravého sloupce. Ověřeny přístupné názvy, viditelný focus, pořadí Tab, Enter i kliknutí na avatar a všechny tři Spotify odkazy: cíle nové karty a nulový `window.opener` (externí cílová stránka při tomto testu nahrazena testovací odpovědí). Změna konfigurace Discord ID mění cíl avataru. Simulovaným WebSocketem ověřeny přechody skladeb i se zaměřeným názvem, platné → chybějící/neplatné ID, neaktivita, výpadek a obnova; žádný starý cíl ani nechtěná zastávka Tab. Obal a název bez platného ID zůstávají viditelné.
+
+Dále prošly kontroly progressu, animací, systémového omezení pohybu, skrytí/obnovení dokumentu, menu a klávesnice, schránky, preferencí a mobilního dotyku. Regrese potvrdily odstranění/opakované načtení avataru, ochranu před starou chybou obrázku aktivity, poslední online, reconnect/heartbeat/timeout i blokované úložiště. Skutečné spojení Lanyard načetlo online stav, avatar a Visual Studio Code; skutečný Spotify poslech v době kontroly neběžel, jeho přechody byly simulované. Vizuálně prohlédnuty screenshoty desktopu, tabletu, mobilu, nedostupných panelů a detaily focusu avataru/obalu/názvu. Prošly kontroly ID, kotev, lokálních souborů, `node --check` a `git diff --check`. Pomocné skripty, výsledky a screenshoty jsou mimo projekt v `%TEMP%/borik-links-qa/`.
 
 ## Kontrola projektu a opravy živého stavu 23. 10. 2026
 

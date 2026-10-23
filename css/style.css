@@ -65,7 +65,7 @@ svg { flex-shrink: 0; }
 .command-trigger:hover { border-color: var(--accent); color: var(--text); }
 .command-symbol { color: var(--text); font-size: 17px; }
 kbd { font: 10px var(--font); border: 1px solid #ffffff20; border-bottom-width: 2px; border-radius: 4px; padding: 2px 5px; color: var(--muted); }
-.hero { display: grid; grid-template-columns: 1.35fr 1fr; align-items: center; gap: 20px; min-height: 440px; padding: 38px 0 42px; overflow: clip; }
+.hero { display: grid; grid-template-columns: 1.35fr 1fr; align-items: center; gap: 20px; padding: 38px 0 26px; overflow: clip; }
 .hero-copy { min-width: 0; position: relative; z-index: 2; }
 .eyebrow { font: 500 10px/1.5 var(--display); letter-spacing: 1.8px; color: var(--muted); display: flex; align-items: center; gap: 9px; }
 h1 { font-family: var(--display); letter-spacing: -1.8px; font-weight: 500; }
@@ -93,7 +93,8 @@ h1 { font-family: var(--display); letter-spacing: -1.8px; font-weight: 500; }
 .orbit-two span { width: 4px; height: 4px; top: -2px; background: var(--secondary); }
 @keyframes orbit { to { transform: rotate(335deg); } }
 .avatar-core { width: 174px; height: 174px; position: relative; border: 1px solid rgba(var(--accent-rgb), .4); border-radius: 42px; padding: 8px; background: linear-gradient(135deg, rgba(var(--accent-rgb), .17), #0c0d12); box-shadow: 0 24px 80px #0008, 0 0 55px rgba(var(--accent-rgb), .07); transform: rotate(-8deg); transition: transform .5s; }
-.avatar-core:hover { transform: rotate(0deg) scale(1.04); }
+.avatar-core[href]:hover { transform: rotate(0deg) scale(1.04); }
+.avatar-core:focus-visible { outline: 3px solid var(--accent); outline-offset: 6px; transform: rotate(0deg); }
 .avatar-inner { position: relative; width: 100%; height: 100%; border-radius: 34px; overflow: hidden; background: linear-gradient(140deg, #2a2439, #14131c); }
 #av-fb { position: absolute; inset: 0; display: grid; place-items: center; font: 600 90px var(--display); color: var(--accent); transition: opacity .4s; }
 #av-fb.gone { opacity: 0; }
@@ -111,7 +112,7 @@ h1 { font-family: var(--display); letter-spacing: -1.8px; font-weight: 500; }
 .spark-two { left: 28px; bottom: 100px; font-size: 22px; opacity: .6; }
 .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 19px; }
 .section-heading h2 { font-family: var(--display); font-weight: 500; font-size: 20px; letter-spacing: -.4px; }
-.bento-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; }
+.bento-grid { display: grid; grid-template-columns: 1.2fr 1fr; align-items: start; gap: 16px; }
 .panel { position: relative; min-width: 0; border: 1px solid var(--line); background: linear-gradient(135deg, #ffffff02, transparent 65%), var(--panel); border-radius: 17px; overflow: hidden; transition: border-color .25s, box-shadow .25s; }
 .panel:hover { border-color: rgba(var(--accent-rgb), .25); box-shadow: 0 10px 35px #0002; }
 .panel::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(320px circle at var(--card-x, 50%) var(--card-y, 0%), rgba(var(--accent-rgb), .04), transparent 65%); }
@@ -125,7 +126,7 @@ h1 { font-family: var(--display); letter-spacing: -1.8px; font-weight: 500; }
 .interest-tag { border: 1px solid rgba(var(--accent-rgb), .13); background: rgba(var(--accent-rgb), .04); border-radius: 5px; padding: 4px 9px; font: 12px/1.5 var(--display); color: var(--accent); }
 .bio-bottom { border-top: 1px solid var(--line); padding-top: 15px; margin-top: auto; display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; font: 12px/1.5 var(--display); color: var(--muted); }
 .small-dot { display: inline-block; width: 4px; height: 4px; background: var(--accent); border-radius: 50%; vertical-align: middle; margin-right: 6px; }
-.live-column { display: grid; grid-template-rows: auto 1fr; gap: 16px; min-width: 0; }
+.live-column { display: grid; grid-template-rows: auto auto; gap: 16px; min-width: 0; }
 .music-panel, .activity-panel { padding: 25px; display: flex; flex-direction: column; }
 .music-panel { background: linear-gradient(135deg, #8ce2aa05, transparent 70%), var(--panel); }
 .music-panel.is-playing { border-color: #8ce2aa40; background: radial-gradient(ellipse at 0 45%, #8ce2aa16, transparent 70%), var(--panel); }
@@ -144,7 +145,12 @@ h1 { font-family: var(--display); letter-spacing: -1.8px; font-weight: 500; }
 .game-idle-icon { display: grid; place-items: center; width: 52px; height: 52px; flex-shrink: 0; background: rgba(var(--accent-rgb), .06); border: 1px solid rgba(var(--accent-rgb), .1); border-radius: 13px; font: 30px var(--display); color: var(--accent); }
 .activity-panel .panel-topline svg { color: var(--muted); }
 .sp-body, .act-card { display: flex; align-items: center; gap: 13px; }
-.sp-art { width: 63px; height: 63px; flex-shrink: 0; border-radius: 10px; object-fit: cover; background: #ffffff07; }
+.sp-art-link { display: block; flex: 0 0 63px; border-radius: 10px; }
+.sp-art { display: block; width: 63px; height: 63px; border-radius: 10px; object-fit: cover; background: #ffffff07; }
+.sp-song { display: block; border-radius: 2px; }
+.sp-art-link[href]:hover { outline: 1px solid var(--green); outline-offset: 3px; }
+.sp-song[href]:hover, .sp-song[href]:focus-visible { color: var(--green); text-decoration: underline; text-underline-offset: 3px; }
+.sp-art-link:focus-visible, .sp-song:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 .sp-info, .act-info { flex: 1; min-width: 0; }
 .now-label { display: block; color: var(--accent); font: 12px/1.5 var(--display); margin-bottom: 6px; }
 .sp-song, #act-name { font: 500 15px/1.4 var(--display); }
@@ -256,7 +262,7 @@ html.calm { scroll-behavior: auto; }
 @media (min-width: 1500px) { .page-shell { max-width: 1180px; } }
 @media (max-width: 850px) {
   .page-shell { padding: 0 25px; }
-  .hero { grid-template-columns: 1.2fr 1fr; gap: 0; padding-top: 50px; min-height: 440px; }
+  .hero { grid-template-columns: 1.2fr 1fr; gap: 0; }
   .hero-art { transform: scale(.85); }
   .hero-actions { gap: 15px; }
   .bento-grid { grid-template-columns: 1.1fr 1fr; }
