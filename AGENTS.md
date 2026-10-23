@@ -1,6 +1,6 @@
 # Kontext projektu pro další chaty
 
-Poslední aktualizace: 21. 10. 2026. Tento soubor čti při zahájení práce v projektu. Po podstatných změnách aktualizuj příslušné části, zejména aktuální stav a rozpracované návrhy. Je to mapa projektu; před úpravou ověř skutečný stav dotčeného kódu a `git status`, protože soubory se mohou mezitím změnit.
+Poslední aktualizace: 23. 10. 2026. Tento soubor čti při zahájení práce v projektu. Po podstatných změnách aktualizuj příslušné části, zejména aktuální stav a rozpracované návrhy. Je to mapa projektu; před úpravou ověř skutečný stav dotčeného kódu a `git status`, protože soubory se mohou mezitím změnit.
 
 ## Účel a styl
 
@@ -52,7 +52,17 @@ Aktuální hry v pořadí: Kingdom Come: Deliverance II, Cyberpunk 2077, RimWorl
 - Lanyard: `wss://api.lanyard.rest/socket`, odběr podle `discordId`, heartbeat, timeout 12 s a opakování spojení s prodlevou rostoucí od 3 do 30 s.
 - Rozlišují se načítání, neaktivita a nedostupnost služby. „Naposledy online“ není úplná historie Discordu. Spotify progress běží po sekundě; živá data vyžadují internet a profil dostupný přes Lanyard.
 
-## Aktuální doladění: aktivita, čitelnost a odkazy
+## Kontrola projektu a opravy živého stavu 23. 10. 2026
+
+Prohlédnuty všechny zdrojové soubory a ověřeno chování v prohlížeči. Pracovní strom byl před kontrolou čistý. V `js/presence.js` opraveny tři reprodukované chyby:
+
+- Čas posledního online stavu se při trvajícím online spojení obnovuje i každou minutu a při změně viditelnosti stránky. Při přímém přechodu online / nečinný / nerušit → offline se uloží okamžik přechodu; dříve se zobrazovala doba od poslední změny aktivity (například „před 2 h“ ihned po odpojení). Výpadek spojení ani první offline údaj po novém připojení si nevymýšlí novější online čas. Neznámý Discord stav se sjednotí na offline i pro tento výpočet.
+- Odstranění Discord avataru vrátí iniciálu a vymaže starý obrázek. Při změně obrázku se do načtení zobrazí fallback; po neúspěšném načtení další aktualizace umožní opakovat i stejnou URL.
+- Opožděná chyba obrázku předchozí aktivity už nesmaže obrázek nové aktivity ani jej nepřepíše starou náhradní ikonou. Fallback se použije pouze u obrázku, který právě patří do panelu.
+
+Ověření: headless Microsoft Edge přes Python Playwright na localhostu. Pět šířek 1440/850/660/390/360 px, všechny tři motivy, běžný i klidný režim, aktivní/neaktivní/nedostupné panely, dlouhé názvy a šest obrázků favoritů bez přetékání. Ověřeny odkazy favoritů a Enter, hover/focus, Ctrl+K / Cmd+K / Esc, návrat fokusu, kotvy, skutečná schránka i ruční fallback, uložení preferencí, dotykové menu, Spotify progress a animace, systémové omezení pohybu a simulované skrytí stránky. Cílené regresní testy ověřily všechny tři opravy, opakované načtení chybného avataru, průběh času včetně výpadku a návratu spojení, neznámý stav a blokované localStorage. Simulovaným WebSocketem ověřeno přihlášení odběru, heartbeat, 12s timeout, rostoucí prodlevy obnovení a jejich reset po přijetí dat, ignorování neplatného JSON. Skutečný Lanyard načetl online stav, avatar, Visual Studio Code a aktivní Spotify poslech. Vizuálně prohlédnuty screenshoty desktopu a mobilu. Bez chyb JS/konzole v hlavní kontrole i při skutečném spojení; cílené regrese bez chyb JS. Staticky ověřeny unikátní ID, kotvy a existence lokálních skriptů/stylů; prošlo `node --check` všech pěti JS souborů a `git diff --check`. Pomocné skripty, výsledky a screenshoty jsou mimo projekt v `%TEMP%/borik-audit-qa/`.
+
+## Doladění 21. 10. 2026: aktivita, čitelnost a odkazy
 
 Druhá úprava 21. 10. 2026 podle konkrétních šesti bodů uživatele. Předchozí necommitnuté změny v AGENTS.md, config.js, CSS, HTML, app.js a presence.js byly zkontrolovány a zachovány.
 

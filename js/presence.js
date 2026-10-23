@@ -45,7 +45,12 @@
     const seconds = Math.max(0, Math.floor(ms / 1000));
     return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
   };
+  function rememberOnline() {
+    lastOnline = new Date();
+    storage.set('_lo', lastOnline.toISOString());
+  }
   function updateLastSeen() {
+    if (currentStatus && currentStatus !== 'offline') rememberOnline();
     if (currentStatus !== 'offline' || !lastOnline) { $('lseen').textContent = ''; return; }
     const seconds = Math.max(0, Math.floor((Date.now() - lastOnline) / 1000));
     const value = seconds < 60 ? `${seconds} s` : seconds < 3600 ? `${Math.floor(seconds / 60)} min` : seconds < 86400 ? `${Math.floor(seconds / 3600)} h` : `${Math.floor(seconds / 86400)} d`;
@@ -59,7 +64,14 @@
     $('sp-el').textContent = formatTime(elapsed); $('sp-tot').textContent = formatTime(duration);
   }
   function setImage(element, source, fallback) {
-    if (!source || element.getAttribute('src') === source) return;
+    if (source && element.getAttribute('src') === source && (!element.complete || element.naturalWidth > 0)) return;
+    element.classList.remove('on');
+    if (fallback) fallback.classList.remove('gone');
+    if (!source) {
+      element.onload = element.onerror = null;
+      element.removeAttribute('src');
+      return;
+    }
     element.onload = () => { element.classList.add('on'); if (fallback) fallback.classList.add('gone'); };
     element.onerror = () => { element.classList.remove('on'); if (fallback) fallback.classList.remove('gone'); };
     element.src = source;
@@ -84,14 +96,15 @@
   function applyPresence(data) {
     clearTimeout(staleTimer); retry = 0;
     const user = data.discord_user;
-    currentStatus = data.discord_status || 'offline';
+    const nextStatus = Object.hasOwn(statusNames, data.discord_status) ? data.discord_status : 'offline';
+    // Offline přechod patří k aktuálnímu okamžiku, ne k poslední změně aktivity.
+    if (currentStatus && currentStatus !== 'offline' && nextStatus === 'offline') rememberOnline();
+    currentStatus = nextStatus;
     $('presence-status').textContent = statusNames[currentStatus] || statusNames.offline;
     $('sdot').className = `sdot ${Object.hasOwn(statusNames, currentStatus) ? currentStatus : 'offline'}`;
-    if (user?.avatar) {
-      const extension = user.avatar.startsWith('a_') ? 'gif' : 'png';
-      setImage($('av'), `https://cdn.discordapp.com/avatars/${encodeURIComponent(user.id)}/${encodeURIComponent(user.avatar)}.${extension}?size=256`, $('av-fb'));
-    }
-    if (currentStatus !== 'offline') { lastOnline = new Date(); storage.set('_lo', lastOnline.toISOString()); }
+    const extension = user?.avatar?.startsWith('a_') ? 'gif' : 'png';
+    const avatarSource = user?.avatar ? `https://cdn.discordapp.com/avatars/${encodeURIComponent(user.id)}/${encodeURIComponent(user.avatar)}.${extension}?size=256` : null;
+    setImage($('av'), avatarSource, $('av-fb'));
     updateLastSeen();
     const activity = data.activities?.find(item => item.type !== 2 && item.type !== 4);
     $('act-card').style.display = activity ? 'flex' : 'none'; $('act-idle').style.display = activity ? 'none' : '';
@@ -107,7 +120,8 @@
       const source = activityImage(activity);
       if (source) {
         const image = document.createElement('img'); image.className = 'act-thumb'; image.alt = '';
-        image.onerror = () => { wrap.textContent = fallback; }; image.src = source; wrap.replaceChildren(image);
+        image.onerror = () => { if (image.parentElement === wrap) wrap.textContent = fallback; };
+        image.src = source; wrap.replaceChildren(image);
       }
     }
     clearInterval(spotifyTimer);
@@ -144,4 +158,5 @@
     socket.onerror = () => socket.close();
   }
   connect(); setInterval(updateLastSeen, 60_000);
+  document.addEventListener('visibilitychange', updateLastSeen);
 })();
