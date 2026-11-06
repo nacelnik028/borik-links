@@ -123,4 +123,4 @@ Spotify přístup odvolej v [připojených aplikacích](https://www.spotify.com/
 
 `npm ci` nainstaluje přesně připnuté serverové závislosti, `npm test` ověří serverové funkce a ochranu publikačních souborů bez skutečných účtů. `node --env-file=.env scripts/build.mjs` sestaví veřejnou složku a porovná místní přístupové údaje s výstupem bez jejich vypsání. Netlify načte produkční prostředí automaticky. Pro místní běh funkcí lze použít `netlify dev`; běžný statický server bez funkcí zobrazí jejich nedostupnost.
 
-Stav nasazení a konkrétní ověření z 6. 11. 2026 jsou v aktuální části [AGENTS.md](AGENTS.md). Simulované testy samy nedokazují dostupnost skutečných služeb.
+Veřejné nasazení na [borik-links.netlify.app](https://borik-links.netlify.app/) bylo 6. 11. 2026 ověřeno s oběma skutečnými zdroji. Prošlo 18 Node testů, 90 simulovaných prohlížečových kombinací a 30 produkčních kombinací rozložení. Konkrétní výsledky, ochrany a omezení jsou v aktuální části [AGENTS.md](AGENTS.md). Simulované testy samy nedokazují dostupnost skutečných služeb.
