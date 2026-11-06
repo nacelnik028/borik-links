@@ -5,8 +5,8 @@
   if (!container) return;
   const groups = Array.isArray(window.SITE_CONFIG.topThree) ? window.SITE_CONFIG.topThree : [];
   const sources = {
-    steam: { endpoint: '/.netlify/functions/top-games', title: 'Nejhranější hry', periods: { all_time: 'Steam · celkový odehraný čas' } },
-    spotify: { endpoint: '/.netlify/functions/top-artists', title: 'Nejposlouchanější interpreti', periods: {
+    steam: { endpoint: '/.netlify/functions/top-games', periods: { all_time: 'Steam · celkový odehraný čas' } },
+    spotify: { endpoint: '/.netlify/functions/top-artists', periods: {
       short_term: 'Spotify · přibližně poslední 4 týdny', medium_term: 'Spotify · přibližně posledních 6 měsíců', long_term: 'Spotify · přibližně poslední rok',
     } },
   };
@@ -110,6 +110,10 @@
     const service = state.source === 'steam' ? 'Steam' : 'Spotify';
     state.note.textContent = payload ? `${sources[state.source].periods[payload.period]}${mode === 'saved' ? ' · uložené údaje' : ''} · ${ageText(payload.updatedAt)}`
       : `${service} · ${mode === 'loading' ? 'načítám statistiky…' : 'statistiky nejsou dostupné'}`;
+    state.note.hidden = mode === 'fresh';
+    state.note.closest('section').classList.toggle('has-statistics', !state.note.hidden);
+    if (payload) state.heading.title = `${sources[state.source].periods[payload.period]} · Načteno: ${new Date(payload.updatedAt).toLocaleString('cs-CZ')}`;
+    else state.heading.removeAttribute('title');
     if (payload) state.note.title = `Načteno: ${new Date(payload.updatedAt).toLocaleString('cs-CZ')}`;
     else state.note.removeAttribute('title');
   }
@@ -165,7 +169,7 @@
     if (!Object.hasOwn(sources, group.source)) continue;
     const section = document.createElement('section');
     section.className = 'panel favorite-group';
-    const heading = textElement('h3', 'favorite-group-heading', sources[group.source].title);
+    const heading = textElement('h3', 'favorite-group-heading', group.title);
     heading.id = `favorite-group-${groupIndex}`;
     section.setAttribute('aria-labelledby', heading.id);
     const list = document.createElement('ol');

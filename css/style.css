@@ -206,6 +206,18 @@ a.favorite-card:focus-visible { outline: 2px solid var(--accent); outline-offset
 .favorite-link { display: inline-block; color: var(--accent); font-size: 12px; margin-top: 4px; }
 .favorite-pending .favorite-title { color: var(--muted); }
 .favorite-status { padding: 20px 0; color: var(--muted); font-size: 13px; line-height: 1.7; overflow-wrap: anywhere; }
+@supports (grid-template-rows: subgrid) {
+  @media (min-width: 661px) {
+    /* Oba panely sdílejí výšku nadpisu, stavu a jednotlivých míst žebříčku. */
+    #top-three-groups { grid-template-rows: auto auto repeat(3, auto); row-gap: 0; }
+    .favorite-group { display: grid; grid-row: span 5; grid-template-rows: subgrid; }
+    .favorite-group-heading { grid-row: 1; }
+    .favorite-group-note { grid-row: 2; }
+    .top-three-grid { display: grid; grid-row: 3 / span 3; grid-template-rows: subgrid; }
+    .top-three-item { display: flex; }
+    .favorite-card { width: 100%; }
+  }
+}
 .si-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .si { min-width: 0; display: flex; align-items: center; gap: 13px; padding: 19px 18px; border: 1px solid var(--line); border-radius: 12px; background: #13141be8; transition: transform .2s, border-color .2s, background .2s; }
 .si:hover { transform: translateY(-4px); border-color: rgba(var(--accent-rgb), .35); background: #1b1c25; }
