@@ -14,27 +14,18 @@ window.SITE_CONFIG = {
   birthday: '2010-02-20', // RRRR-MM-DD; věk se mění automaticky.
   interests: ['rock & metal', 'gaming', 'late night vibes'],
   // MOJE TOP 3 – každá skupina má vlastní žebříček od 1. do 3. místa.
-  // title = název, category = štítek na kartách, items = tři položky v pořadí.
-  // U položky můžeš doplnit description (komentář) a url (https:// odkaz).
-  // image = cesta k obrázku; imageFit: 'contain' zobrazí celý obrázek bez ořezu.
+  // Pořadí, obrázky a odkazy pocházejí výhradně ze skutečných statistik.
+  // Přístupové údaje sem nikdy nepatří; nastavují se pouze na serveru.
   topThree: [
     {
       title: 'Hry',
       category: 'Hra',
-      items: [
-        { title: 'Kingdom Come: Deliverance II', description: '', url: 'https://store.steampowered.com/app/1771300/', image: 'assets/favorites/kingdom-come-deliverance-2.jpg' },
-        { title: 'Cyberpunk 2077', description: '', url: 'https://store.steampowered.com/app/1091500/', image: 'assets/favorites/cyberpunk-2077.jpg' },
-        { title: 'RimWorld', description: '', url: 'https://store.steampowered.com/app/294100/', image: 'assets/favorites/rimworld.jpg' },
-      ],
+      source: 'steam',
     },
     {
       title: 'Interpreti / kapely',
       category: 'Hudba',
-      items: [
-        { title: 'Connor Kauffman', description: '', url: 'https://open.spotify.com/artist/0bFEOKy3T1knA0g7ZaPnHe', image: 'assets/favorites/connor-kauffman.jpg' },
-        { title: 'Bohnes', description: '', url: 'https://open.spotify.com/artist/4aN7T7NNFFMRJgVbRPne8q', image: 'assets/favorites/bohnes.jpg' },
-        { title: 'Autumn Kings', description: '', url: 'https://open.spotify.com/artist/7BYLAgXd3LygQ9aJupZ6p8', image: 'assets/favorites/autumn-kings.jpg' },
-      ],
+      source: 'spotify',
     },
   ],
   discordId: '794089788289712130',

@@ -1,6 +1,22 @@
 # Kontext projektu pro další chaty
 
-Poslední aktualizace: 23. 10. 2026. Tento soubor čti při zahájení práce v projektu. Po podstatných změnách aktualizuj příslušné části, zejména aktuální stav a rozpracované návrhy. Je to mapa projektu; před úpravou ověř skutečný stav dotčeného kódu a `git status`, protože soubory se mohou mezitím změnit.
+Poslední aktualizace: 6. 11. 2026. Tento soubor čti při zahájení práce v projektu. Po podstatných změnách aktualizuj příslušné části, zejména aktuální stav a rozpracované návrhy. Je to mapa projektu; před úpravou ověř skutečný stav dotčeného kódu a `git status`, protože soubory se mohou mezitím změnit.
+
+## Aktuální změna 6. 11. 2026 — pouze skutečné statistiky, příprava produkce
+
+Tato část má přednost před historickými popisy záložního osobního výběru níže. Uživatel výslovně změnil požadavek: ruční favorité se veřejně nepoužívají při načítání ani výpadku. Z konfigurace byly odstraněny položky obou skupin; zachované panely načítají pouze Steam / Spotify. Obrázky v assets zůstaly archivně, bez náhradních iniciál.
+
+- Frontend ukazuje načítání, skutečné výsledky, prázdný žebříček, uložené statistiky se stářím nebo nedostupnost. Nikdy nedoplňuje chybějící výsledky. Cache v2 má 7 dnů a expiruje i bez reloadu; kontrola po 15 minutách jen při viditelné stránce. Změna seznamu čeká na odchod fokusu.
+- Server: GET/HEAD bez query parametrů, 8s upstream timeout, redirect:error, ověřené odpovědi a obrázkové hosty. Steam obsahuje číselné minutes a řadí podle celkového času. CDN má pouze zbývající životnost hodinové cache, ne další hodinu. Selhání má prodlevu a 429 respektuje Retry-After.
+- Spotify přijímá přesně user-top-read a Bearer token. Rotovaný refresh token se ukládá před použitím access tokenu do privátního Netlify Blobs, navíc AES-256-GCM; místně do ignorované .netlify/spotify/. Jediná přímá serverová závislost @netlify/blobs je připnutá v package-lock.json. Podmíněný zámek koordinuje refresh mezi instancemi. Odvolaný/neplatný refresh token se deaktivuje i pro další instance; návštěvník se nikdy nepřihlašuje. Změna počátečního nastavení vytvoří nový záznam.
+- Build má povolené typy souborů, vynechává skryté soubory, symlinky, dokumentaci a mapy; scripts/check-public.mjs porovnává dostupné tajné hodnoty s veřejným výstupem a při shodě build zastaví bez hodnot ve výpisu. Frontend dál nemá balíčky ani framework.
+- Netlify CLI byl přihlášen. Ověřen existující projekt borik-links (6193889f-c200-43b6-b638-0aa87be17fb9), GitHub nacelnik028/borik-links a produkční main. Nastaven build node scripts/build.mjs, publish dist, functions netlify/functions. Všechny přístupové proměnné jsou pouze v Production, preview deploye vypnuté (skip_prs:true), allowed_branches:[main], private_logs:true. I již existující nepoužívané Upstash proměnné byly omezené z All contexts na Production.
+- Tarif Netlify Free odmítl Functions-only scope (403: tarif) a is_secret při povinném post_processing scope (422). Bez placené změny tedy hodnoty zůstávají dostupné oprávněným správcům Netlify ve všech scopes **pouze v kontextu Production**. Neslibovat skrytí před vlastníkem účtu nebo Functions-only. Žádný tarif nebyl změněn.
+- Uživatel místně doplnil Steam API klíč. Skutečné místní handlery obou služeb vrátily 200 a po třech výsledcích (Spotify short_term, Steam all_time). Hodnoty nebyly vypsané. Veřejné nasazení v okamžiku zápisu této části teprve následuje.
+
+Dosavadní ověření: 18 Node testů včetně oprávnění, odmítnutého tokenu bez opakování po restartu, šifrované rotace, zámku, cache bez sčítání, rate limitu, proxy, validace a blokace úniku při buildu. OAuth simulace ověřila state/Host, scope, uložení bez výpisu, reload i opakovaný callback bez výměny kódu. Headless Edge/Python Playwright: 90 kombinací pěti šířek, tří motivů, běžného/klidného CSS a úspěchu/výpadku/dlouhých názvů; také načítání, částečný výpadek, cache/expirace, prázdné/méně výsledků, HTML jako text, odkazy/Enter/opener, focus, obnovování/skrytí, menu a blokované úložiště. Bez přetékání a JS výjimek. Screenshoty desktopu, mobilu a nedostupného stavu vizuálně prohlédnuty. První běh měl systémové omezení pohybu, druhý bez něj. Pomocné skripty a důkazy jsou mimo projekt v %TEMP%/borik-production-qa/.
+
+Kontrola známých aktuálních tajných hodnot zahrnula pracovní soubory, 72 blobů dostupné Git historie a 13 veřejných souborů; žádná shoda, žádný sledovaný .env a žádný zakázaný veřejný soubor. Kontrola zahrnula také Netlify přístup a původní Upstash token, bez jejich výpisu. Nejde o záruku odhalení všech neznámých starých tajemství.
 
 ## Účel a styl
 
@@ -8,10 +24,10 @@ Osobní český web Víta (Boříka), značka `borik.space`: představení, hudb
 
 ## Technologie a spuštění
 
-- Statický HTML/CSS/vanilla JavaScript. Bez frameworku, balíčků, backendu a build kroku; v projektu není nastavený automatický testovací runner.
+- HTML/CSS/vanilla JavaScript bez frontendového frameworku a balíčků; server má @netlify/blobs (npm ci). Automatické TOP 3 mají volitelný backend v Netlify Functions. `node scripts/build.mjs` zkopíruje pouze veřejné soubory do `dist/`; Netlify podle `netlify.toml` publikuje tuto složku a zvlášť sestaví funkce. Potřebuje Node.js 22+. Serverové testy používají vestavěný Node test runner (`node --test tests/top-three.test.mjs`).
 - Pro základní náhled otevři `index.html` v prohlížeči. Pro schránku je vhodné HTTPS nebo localhost; při selhání kopírování existuje ruční fallback.
-- Hosting může být libovolný statický server. Konkrétní nasazení ani vlastnictví domény nebyly při tomto průchodu ověřeny; `borik.space` je značka v HTML.
-- Externí služby: Google Fonts (DM Sans, Space Grotesk), Lanyard WebSocket a obrázky z Discord CDN / služby pro ikony aplikací, obaly Spotify.
+- Uživatel 6. 11. potvrdil hosting Netlify a Spotify Premium; ve formuláři Spotify aplikace uvedl `https://borik-links.netlify.app/`. Propojení s repozitářem a produkční main je nyní ověřené, aktuální nasazení viz výše; vlastnictví domény není ověřené; `borik.space` je značka v HTML. Statický server bez funkcí zobrazí nedostupnost statistik.
+- Externí služby: Google Fonts (DM Sans, Space Grotesk), Lanyard WebSocket, Spotify Web API, Steam Web API a obrázky z Discord CDN / služby pro ikony aplikací, obaly Spotify.
 - Soubory čti a zapisuj jako UTF-8. Ve Windows PowerShell použij u `Get-Content` explicitně `-Encoding UTF8`, jinak může být český text v terminálu zkomolený.
 
 ## Mapa souborů a vazby
@@ -20,10 +36,15 @@ Osobní český web Víta (Boříka), značka `borik.space`: představení, hudb
 | --- | --- |
 | `README.md` | Návod pro vlastníka: úpravy konfigurace, ovládání a omezení živých údajů. |
 | `index.html` | Struktura, výchozí texty, inline SVG, sociální odkazy, dialog rychlého menu a prvky pro JS. |
-| `config.js` | `window.SITE_CONFIG`: osobní texty, datum narození, přezdívky, zájmy, top 3, Discord a výchozí motiv. |
+| `config.js` | `window.SITE_CONFIG`: osobní texty, datum narození, přezdívky, zájmy, zdroje top 3, Discord a výchozí motiv. |
 | `css/style.css` | Kompletní vzhled, tři motivy, animace a responzivita. |
 | `js/app.js` | Vykreslení bia a zájmů, věk, psaní jmen, motivy, schránka, dialog, čas a klidný režim. |
-| `js/top-three.js` | Generování dvou žebříčků a karet z `SITE_CONFIG.topThree`. |
+| `js/top-three.js` | Karty skutečných statistik, načítání, uložené výsledky a nedostupnost. |
+| `netlify/functions/top-artists.mjs`, `top-games.mjs` | Samostatné endpointy Spotify a Steamu. |
+| `netlify/lib/response.mjs` | Timeouty, bezpečné chybové odpovědi a cache funkcí. |
+| `netlify.toml`, `scripts/build.mjs` | Netlify build a oddělení veřejných souborů od serverového kódu a tajných hodnot. |
+| `scripts/connect-spotify.mjs`, `.env.example` | Místní propojení Spotify a předloha nastavení. Skutečný `.env` je ignorovaný Gitem. |
+| `tests/top-three.test.mjs` | Serverové testy se simulovanými odpověďmi API. |
 | `js/presence.js` | Discord avatar/stav, poslední online, herní aktivita a Spotify přes Lanyard. |
 | `js/effects.js` | Canvas hvězdy, padající hvězdy, vlastní kurzor a reakce záře na myš. |
 
@@ -38,20 +59,47 @@ Skripty se načítají přes `defer` v pořadí config → app → top-three →
 5. `#links`: Instagram, GitHub, Steam, Discord, Spotify, TikTok.
 6. Volba motivu a patička s klidným režimem.
 
-Aktuální hry v pořadí: Kingdom Come: Deliverance II, Cyberpunk 2077, RimWorld. Interpreti: Connor Kauffman, Bohnes, Autumn Kings. Všech šest položek má lokální obrázek, prázdný popis a ověřený odkaz: hry na základní hru na Steamu, interpreti na profil Spotify. Cíle jsou zdokumentované v `assets/favorites/SOURCES.md`. Zdroj pravdy je `config.js`; sociální URL jsou přímo v `index.html` a nejsou automaticky odvozené z konfigurace.
+Dvě skupiny `topThree` mají `title`, `category` a povinný známý `source` (`steam` / `spotify`). Pořadí a obsah vrací server. Zobrazují se nejvýše tři skutečné položky; při prázdném výsledku stav bez žebříčku, při chybě použitelná cache nebo nedostupnost. Původní ruční favorité nejsou veřejná záloha. Obrázky se ověřují pro oficiální CDN a používají cover, bez iniciál.
 
-`topThree` je pole skupin `{ title, category, items }`. Položky mají `title`, volitelné `description`, `url` a podporují vlastní `category`. Renderer z každé skupiny zobrazí přesně tři položky; chybějící titul má placeholder „Výběr už brzy.“. Platné HTTP(S) URL vytvoří odkaz, jinak je karta článkem. Obsah se vkládá přes textové DOM API. Bio podporuje `**zvýraznění**`, `{age}` a odstavce oddělené prázdným řádkem, nikoli vlastní HTML.
+Bio podporuje `**zvýraznění**`, `{age}` a odstavce oddělené prázdným řádkem, nikoli vlastní HTML. Texty statistik se vkládají přes textové DOM API. Sociální URL jsou přímo v index.html a neodvozují se z konfigurace.
 
 ## Ovládání a živá data
 
 - Motivy: `violet`, `aurora`, `sunset`; uložená volba přebíjí `defaultTheme`.
-- LocalStorage klíče: `borik-theme`, `borik-calm`, `_lo` (čas posledního online stavu zaznamenaného tímto prohlížečem). Přístup k úložišti je ošetřen pro případ blokování.
+- LocalStorage klíče: `borik-theme`, `borik-calm`, `_lo` (čas posledního online stavu zaznamenaného tímto prohlížečem), `borik-top-three-v2-steam` a `borik-top-three-v2-spotify` (nejvýše 7 dnů starý poslední výsledek statistik). Přístup k úložišti je ošetřen pro případ blokování.
 - Ctrl+K / Cmd+K přepíná nativní dialog, Esc jej zavře. Dialog nabízí kotvy, kopírování Discordu a změnu motivu.
 - Čas se zobrazuje pro `Europe/Prague`; věk se počítá z narozenin v konfiguraci podle data prohlížeče.
 - Klidný režim i `prefers-reduced-motion` omezují pohyb. Systémové omezení pohybu nelze tlačítkem přebít. Animace reagují na skrytí karty, vlastní kurzor na jemný ukazatel.
 - Lanyard: `wss://api.lanyard.rest/socket`, odběr podle `discordId`, heartbeat, timeout 12 s a opakování spojení s prodlevou rostoucí od 3 do 30 s.
 - Rozlišují se načítání, neaktivita a nedostupnost služby. „Naposledy online“ není úplná historie Discordu. Spotify progress běží po sekundě; živá data vyžadují internet a profil dostupný přes Lanyard.
 - Obal, název skladby a „Otevřít ve Spotify“ sdílejí cíl `https://open.spotify.com/track/{track_id}`. `updateSpotifyLinks` přijímá ID jako řetězec 22 alfanumerických znaků; při chybějícím/neplatném ID odebere všem třem prvkům `href` i přístupný název odkazu a skryje pouze „Otevřít ve Spotify“. Obal a název zůstávají viditelné, bez role odkazu a bez zastávky Tab. Při neaktivitě nebo výpadku se cíle také vymažou. Avatar i všechny tři Spotify odkazy otevírají novou kartu přes `target="_blank" rel="noopener noreferrer"`.
+
+## Historie původní implementace TOP 3 z 6. 11. 2026 — překonaná aktuální částí výše
+
+Pracovní strom byl před úpravou čistý. Uživatel chce pořadí z poslechu a herních statistik, potvrdil Premium a Netlify. Výchozí návrh z konverzace: Spotify přibližně za 4 týdny a Steam podle celkových hodin. Původní karty a jejich osobní obsah zůstávají jako záloha, označená „Osobní výběr“; není vydávána za statistiky. Vzhled rozšířen jen o zdroj/období pod nadpisem, u her hodiny v popisu.
+
+- `/.netlify/functions/top-artists`: refresh Spotify access tokenu na serveru, `GET /v1/me/top/artists?limit=3&time_range=…`, pořadí podle Spotify, bez přesných počtů přehrání. Proměnné `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `SPOTIFY_REFRESH_TOKEN`, volitelně `SPOTIFY_TIME_RANGE` (`short_term`, `medium_term`, `long_term`). Veřejná odpověď obsahuje jen položky, zdroj, období a čas načtení.
+- `/.netlify/functions/top-games`: Steam GetOwnedGames, včetně hraných free-to-play her, řazení sestupně podle `playtime_forever`, první tři hry s nenulovým časem. Proměnné `STEAM_API_KEY`, `STEAM_ID`; ID z existujícího odkazu je `76561198879183063`. Herní detaily a čas musí být přístupné; soukromá knihovna se neinterpretuje jako prázdná. Hodiny mají české formátování. Obrázek je ikona z API, bez ní nebo při chybě načtení nejsou žádné náhradní iniciály.
+- Oba zdroje selhávají nezávisle. HTTP 503 = nedoplněné nastavení, 502 = nedostupnost/neplatný přístup/skryté údaje. Chybové odpovědi neposílají upstream tělo, URL s klíčem ani interní výjimky. Upstream timeout 8 s, frontend 20 s. Hodinová cache v instanci funkce a Netlify CDN, sdílený souběžný dotaz. Kombinace cache může odložit novější data až přibližně o dvě hodiny; není to plánovaná úloha a bez návštěv se nic nenačítá.
+- Viditelná stránka kontroluje výsledky po 15 minutách. Při chybě ponechá poslední výsledek stejného zdroje v prohlížeči do stáří 7 dnů s označením „uložené údaje“, jinak osobní výběr. Odpovědi i uložené údaje se validují, neplatné cíle odkazů se odmítají. Méně než tři skutečné výsledky se nedoplňují osobními favority. Aktualizace počká, pokud je focus uvnitř seznamu, a provede se po jeho opuštění. `file://` nespouští požadavky na funkce.
+- `scripts/connect-spotify.mjs` načte přístupové údaje z ignorovaného `.env` a spustí místní callback `http://127.0.0.1:8888/callback` (stejný URI musí být v nastavení Spotify aplikace). Žádá pouze `user-top-read`, kontroluje náhodný OAuth state i Host a má pětiminutový limit. Token zapíše do `.env`, nevypisuje jej. Podle aktuální dokumentace Spotify refresh token vyprší po 6 měsících; propojení je pak potřeba zopakovat a aktualizovat v Netlify.
+- `scripts/build.mjs` publikuje pouze `index.html`, `config.js`, `css/`, `js/`, `assets/` do ignorované `dist/`. Funkce, pomocné skripty, testy, `.env` ani dokumentace se veřejně nekopírují. Serverové údaje se nastavují v Netlify Environment variables se scope Functions; úplný postup je v README. Funguje nasazení z repozitáře/CLI, samotný Netlify Drop nestačí pro sestavení funkcí.
+
+Ověření: 7 testů Node runneru (obnova tokenu a oprávnění, tři položky a období, řazení hodin a filtrace, veřejná/prázdná/soukromá knihovna, chybové odpovědi bez tajných hodnot, nezávislé zdroje, sdílení souběžných požadavků, cache a HTTP metody). Headless Edge/Python Playwright na localhostu nad sestavenou `dist/`: 1440/850/660/390/360 px × tři motivy × běžný/klidný vzhled × dostupné/nedostupné/dlouhé názvy (90 kombinací), bez přetékání. Dále uložené/poškozené/staré údaje, výpadek jen jednoho zdroje, neplatné odkazy, HTML v názvu jako prostý text, prázdné výsledky, blokované úložiště, Tab, Enter s novou kartou a nulovým openerem, Ctrl+K/Esc a zachování fokusu při opožděné odpovědi. Bez JS výjimek. Vizuálně prohlédnut desktop i mobil s načtenými daty a mobil se záložním výběrem. Místní OAuth pomocník ověřen simulovaným token endpointem: rozsah oprávnění, platný callback, odmítnutí cizího state/Hostu, zápis tokenu pouze do souboru i odmítnutí přihlášení. Prošly build, syntaktické kontroly a `git diff --check`.
+
+Původní kontroly použily simulované odpovědi; navazující skutečné ověření Spotify je uvedené níže. Steam není nakonfigurovaný a běh funkcí na Netlify není ověřený ani nasazený. Následuje Steam API klíč a doplnění proměnných na Netlify. Simulované testy nepovažovat za ověření skutečných statistik. Kontrolní skripty a screenshoty jsou mimo projekt v `%TEMP%/borik-netlify-qa/`.
+
+### Navazující kontrola ochrany Spotify 6. 11. 2026
+
+Uživatel vytvořil Spotify aplikaci a doplnil lokální Client ID/Secret; požádal o kontrolu, že veřejný web neumožní přihlášení do jeho Spotify. Hodnoty tajných údajů se při kontrole nevypisovaly. `.env` není sledovaný Gitem a je ignorovaný. Aktuální tajný klíč nebyl nalezen v neignorovaných souborech, textové historii repozitáře ani ve 14 veřejných souborech `dist/`. Živý Netlify web vracel 404 pro `/.env`, `/.env.production`, `/netlify/functions/top-artists.mjs` i pro dosud nenasazený endpoint `/.netlify/functions/top-artists`; těla odpovědí neobsahovala kontrolované přístupové údaje.
+
+Zpřísněna kontrola oprávnění: místní helper a serverová obnova přijmou pouze přesný rozsah `user-top-read`, širší nebo chybějící rozsah odmítnou. Přidán regresní test proti tokenu s právem ovládat přehrávání či upravovat playlisty; serverový soubor má nyní 8 procházejících testů. Ověřeny také původní OAuth kontroly state, Host a nevypisování tokenu. Scope je pouze na čtení žebříčků, heslo není součástí projektu; nelze slibovat absolutní bezpečnost účtu nebo zaměňovat tuto kontrolu za prověření celé infrastruktury. Přihlašovací callback se spouští jen na loopback adrese a pouze pro jednorázové propojení vlastníka, na veřejném webu žádné přihlašovací rozhraní není. Po nasazení je potřeba znovu ověřit skutečné nasazení a Netlify proměnné.
+
+### Dokončené místní propojení Spotify 6. 11. 2026
+
+Uživatel dokončil skutečný souhlas Spotify. Původní helper skončil úspěšně a uložil refresh token do ignorovaného `.env`. Následný obrázek `ERR_CONNECTION_REFUSED` neznamenal neúspěšné propojení: callback už neběžel po dokončení. Skutečný serverový handler pak přes nový access token načetl HTTP 200, ověřil přesné oprávnění `user-top-read` a obdržel tři interprety pro `short_term`. Hodnoty tokenů se nevypisovaly. Opakovaná kontrola zahrnující i uložený refresh token nenašla jeho ani Client Secret v neignorovaných souborech, textové historii repozitáře nebo veřejné složce. Živý Netlify endpoint stále vrací 404, přenesení proměnných a nasazení teprve následuje; `STEAM_API_KEY` zůstává prázdné.
+
+Pro další přihlášení upraveno dokončení helperu: po uložení tokenu HTTP 303 na kořenovou potvrzovací stránku bez jednorázového kódu; dvě minuty umožňuje reload i opakovaný callback, aniž znovu mění kód za token, poté se vypne. Potvrzení výslovně uvádí dočasnost stránky. Doplněno bezpečné odmítnutí neplatné URL požadavku. Místní simulovaný OAuth test ověřuje úspěch, reload, opakovaný callback, cizí state/Host, odmítnutí souhlasu a odmítnutí širšího oprávnění; token zůstává jen ve fixture souboru, ne v odpovědích a výstupech.
 
 ## Klikatelné živé údaje a rozložení 23. 10. 2026
 
