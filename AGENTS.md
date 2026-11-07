@@ -2,6 +2,14 @@
 
 Poslední aktualizace: 7. 11. 2026. Tento soubor čti při zahájení práce v projektu. Po podstatných změnách aktualizuj příslušné části, zejména aktuální stav a rozpracované návrhy. Je to mapa projektu; před úpravou ověř skutečný stav dotčeného kódu a `git status`, protože soubory se mohou mezitím změnit.
 
+## Obálky her a kompaktnější TOP 3 — 7. 11. 2026
+
+`js/top-three.js` odvodí Steam App ID z ověřeného odkazu na hru a podle něj načte knihovní obálku ze `shared.steamstatic.com`. Při chybě zkusí původní ikonu pouze pro stejné App ID. Pokud žádná není k dispozici, řádek zůstane bez obrázku. Funguje také s dříve uloženými výsledky v2. Rozměr všech obrázků je 48 × 48 px s ořezem `cover` a zaoblením 8 px.
+
+Svislé odsazení karet je 6 px. Kratší mezery u hodin a odkazů „Steam ↗“ a „Spotify ↗“ snižují běžné řádky na desktopu o 17,4–17,5 % a na mobilu o 16,4–17,5 %. Dlouhé názvy se zalamují a sdílené řádky desktopového subgridu se jim přizpůsobí.
+
+Edge ověřil šest šířek od 360 do 1440 px včetně hranice 660/661 px, srovnání výšek před úpravou a po ní, delší názvy, viditelnost odkazů a zarovnání dělicích linek. Při simulované změně statistik po 15 minutách se na desktopu i mobilu načetla skutečná obálka Stardew Valley a aktualizace počkala na opuštění fokusu. Ověřen fallback na ikonu, chyba obou obrázků i stará cache. Náhledy jsou v `%TEMP%/borik-top-three-artwork-qa/`.
+
 ## Vizuální navázání 6. 11. 2026 — původní nadpisy a zarovnané řádky TOP 3
 
 Uživatel dvěma screenshoty požádal o návrat názvů a sjednocení řádků. Nadpisy jsou opět „Hry“ a „Interpreti / kapely“ z config.js. U čerstvých statistik má nadpis původní spodní linku a odsazení. Zdroj, období a čas zůstávají v title nadpisu. Od navazující úpravy 7. 11. 2026 je při prvním načítání vidět jen stav v řádcích žebříčku. Stavový `<p>` pod nadpisem se vkládá až při selhání dotazu a po úspěšné obnově se odstraní z DOM. Uložené výsledky se při startu drží jako záloha pro případ výpadku.
@@ -77,7 +85,7 @@ Skripty se načítají přes `defer` v pořadí config → app → top-three →
 5. `#links`: Instagram, GitHub, Steam, Discord, Spotify, TikTok.
 6. Volba motivu a patička s klidným režimem.
 
-Dvě skupiny `topThree` mají `title`, `category` a povinný známý `source` (`steam` / `spotify`). Pořadí a obsah vrací server. Zobrazují se nejvýše tři skutečné položky; při prázdném výsledku stav bez žebříčku, při chybě použitelná cache nebo nedostupnost. Původní ruční favorité nejsou veřejná záloha. Obrázky se ověřují pro oficiální CDN a používají cover, bez iniciál.
+Dvě skupiny `topThree` mají `title`, `category` a povinný známý `source` (`steam` / `spotify`). Pořadí a položky vrací server. Zobrazují se nejvýše tři skutečné položky; při prázdném výsledku stav bez žebříčku, při chybě použitelná cache nebo nedostupnost. Původní ruční favorité nejsou veřejná záloha. Web odvozuje obálky podle Steam App ID, náhradní ikony a obrázky interpretů ověřuje pro oficiální CDN a všechny zobrazuje s ořezem `cover`.
 
 Bio podporuje `**zvýraznění**`, `{age}` a odstavce oddělené prázdným řádkem, nikoli vlastní HTML. Texty statistik se vkládají přes textové DOM API. Sociální URL jsou přímo v index.html a neodvozují se z konfigurace.
 

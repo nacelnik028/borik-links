@@ -42,7 +42,9 @@
     const rank = textElement('span', 'favorite-rank', String(index + 1).padStart(2, '0'));
     rank.setAttribute('aria-hidden', 'true');
     card.append(rank);
-    if (title && typeof entry.image === 'string' && entry.image.trim()) {
+    const artwork = entry.appId
+      ? `https://shared.steamstatic.com/store_item_assets/steam/apps/${entry.appId}/library_600x900.jpg` : '';
+    if (title && (artwork || entry.image)) {
       const image = document.createElement('img');
       image.className = 'favorite-image';
       image.alt = ''; // Název je hned vedle; čtečka jej nemusí opakovat.
@@ -50,8 +52,15 @@
       image.height = 48;
       image.loading = 'lazy';
       image.decoding = 'async';
-      image.onerror = () => image.remove();
-      image.src = entry.image;
+      image.onerror = () => {
+        if (!artwork || !entry.image) {
+          image.remove();
+          return;
+        }
+        image.onerror = () => image.remove();
+        image.src = entry.image;
+      };
+      image.src = artwork || entry.image;
       card.append(image);
     }
     const content = document.createElement('div');
@@ -78,20 +87,22 @@
     const timestamp = Date.parse(value.updatedAt);
     if (!Number.isFinite(timestamp) || timestamp > Date.now() + 300000 || Date.now() - timestamp > cacheLifetime) return null;
     const items = [], urls = new Set();
+    const pattern = source === 'steam' ? /^https:\/\/store\.steampowered\.com\/app\/(\d+)\/$/
+      : /^https:\/\/open\.spotify\.com\/artist\/[a-zA-Z0-9]{22}$/;
     for (const item of value.items) {
       if (!item || typeof item.title !== 'string' || !item.title.trim() || item.title.length > 300) return null;
       const url = externalLink(item.url);
-      const pattern = source === 'steam' ? /^https:\/\/store\.steampowered\.com\/app\/\d+\/$/
-        : /^https:\/\/open\.spotify\.com\/artist\/[a-zA-Z0-9]{22}$/;
-      if (!url || !pattern.test(url) || urls.has(url)) return null;
+      const linkMatch = url && pattern.exec(url);
+      if (!linkMatch || urls.has(url)) return null;
       urls.add(url);
       if (source === 'steam' && (!Number.isSafeInteger(item.minutes) || item.minutes <= 0
         || (items.length && item.minutes > items[items.length - 1].minutes))) return null;
-      const image = typeof item.image === 'string' && (source === 'steam'
-        ? /^https:\/\/media\.steampowered\.com\/steamcommunity\/public\/images\/apps\/\d+\/[a-f\d]{40}\.jpg$/i
-        : /^https:\/\/i\.scdn\.co\/image\/[a-z\d]+$/i).test(item.image) ? item.image : '';
+      const appId = linkMatch[1];
+      const image = typeof item.image === 'string' && (appId
+        ? /^https:\/\/media\.steampowered\.com\/steamcommunity\/public\/images\/apps\/(\d+)\/[a-f\d]{40}\.jpg$/i.exec(item.image)?.[1] === appId
+        : /^https:\/\/i\.scdn\.co\/image\/[a-z\d]+$/i.test(item.image)) ? item.image : '';
       items.push({ title: item.title, url,
-        ...(source === 'steam' ? { minutes: item.minutes,
+        ...(appId ? { appId, minutes: item.minutes,
           description: `${new Intl.NumberFormat('cs-CZ', { maximumFractionDigits: 1 }).format(item.minutes / 60)} h celkem` } : {}),
         image,
       });

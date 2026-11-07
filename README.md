@@ -14,7 +14,7 @@ Otevři **`config.js`**. Texty jsou na jednom místě:
 - `bio` – celý text „o mně“. Může mít více odstavců. `**slovo**` zvýrazní slovo, `{age}` doplní aktuální věk.
 - `birthday` – datum narození ve formátu `2010-02-20`.
 - `interests` – malé štítky pod biem.
-- `topThree` – dvě skupiny skutečných statistik. `source: 'steam'` / `source: 'spotify'` určuje zdroj. Pořadí, názvy, obrázky a odkazy vrací serverové funkce; ruční favorité se nepoužívají ani při výpadku. Přístupové údaje do této konfigurace nikdy nepatří.
+- `topThree` – dvě skupiny skutečných statistik. `source: 'steam'` / `source: 'spotify'` určuje zdroj. Pořadí, názvy, odkazy a podklady pro obrázky vrací serverové funkce. Při výpadku může web zobrazit poslední uložené statistiky. Přístupové údaje do této konfigurace nikdy nepatří.
 - `defaultTheme` – výchozí barvy: `violet`, `aurora` nebo `sunset`. Uložená volba návštěvníka má přednost.
 - `discordId` a `discordUsername` – profil pro živý stav a jméno ke kopírování.
 
@@ -44,7 +44,7 @@ Na počítači myš doprovází malá tečka s tenkým kroužkem bez částic. N
 
 Moje top 3 tvoří dva kompaktní panely s očíslovanými řádky: hry a interpreti / kapely. Nadpisy zůstávají „Hry“ a „Interpreti / kapely“. Načítání je vidět přímo v řádcích žebříčku. Doprovodný řádek pod nadpisem se zobrazí při nedostupnosti nebo použití uložených výsledků po výpadku. U načtených výsledků jsou zdroj, období a přesný čas v popisku po najetí na nadpis. Řádky obou panelů vedle sebe sdílejí výšku podle delšího obsahu, takže obrázky a oddělovací linky lícují. Na počítači jsou vedle sebe, na mobilu pod sebou. Hry obsahují český počet hodin; každá skutečná položka odkazuje na Steam nebo Spotify. Chybějící výsledky se ničím nedoplňují.
 
-Obrázky statistik přicházejí z oficiálních odpovědí služeb a vyplňují 48px rámeček s ořezem (`cover`). Bez platného obrázku nebo při chybě načtení zůstane číslo a název, bez náhradních iniciál. Původní obrázky v `assets/favorites/` zůstávají archivním obsahem projektu a nejsou zálohou statistik.
+Web načítá oficiální obálky her ze Steam CDN podle Steam App ID v odkazu. Při chybě načtení zkusí ikonu téže hry z odpovědi Steamu. Fotky interpretů dodává Spotify. Obrázky vyplňují zaoblený čtverec 48 × 48 px s ořezem (`cover`). Když obrázek chybí nebo se ani náhradní ikona nenačte, zůstane řádek bez obrázku. Původní obrázky v `assets/favorites/` zůstávají archivním obsahem projektu a nejsou zálohou statistik.
 
 Mobilní úvod má menší avatar a oběžné kruhy. Při poslechu se Spotify panel jemně zeleně zvýrazní; při neaktivitě nebo výpadku se vrátí do základního vzhledu.
 
