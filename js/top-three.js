@@ -12,6 +12,7 @@
   };
   const refreshInterval = 15 * 60 * 1000;
   const cacheLifetime = 7 * 24 * 60 * 60 * 1000;
+  const canFetch = ['http:', 'https:'].includes(location.protocol);
   const liveGroups = [];
 
   function textElement(tag, className, text) {
@@ -112,7 +113,7 @@
     if (payload) state.heading.title = `${period} · ${loadedAt}`;
     else state.heading.removeAttribute('title');
 
-    if (mode === 'fresh') {
+    if (mode === 'fresh' || mode === 'loading') {
       state.note?.remove();
       state.note = null;
       state.section.classList.remove('has-statistics');
@@ -126,7 +127,7 @@
     }
     const service = state.source === 'steam' ? 'Steam' : 'Spotify';
     state.note.textContent = payload ? `${period} · uložené údaje · ${ageText(payload.updatedAt)}`
-      : `${service} · ${mode === 'loading' ? 'načítám statistiky…' : 'statistiky nejsou dostupné'}`;
+      : `${service} · statistiky nejsou dostupné`;
     if (payload) state.note.title = loadedAt;
     else state.note.removeAttribute('title');
   }
@@ -194,14 +195,14 @@
     try {
       state.latest = normalizePayload(JSON.parse(window.siteStorage?.get(state.cacheKey) || 'null'), state.source);
     } catch { /* Poškozená nebo zablokovaná cache nemá bránit načtení webu. */ }
-    showStatistics(state, state.latest, state.latest ? 'saved' : ['http:', 'https:'].includes(location.protocol) ? 'loading' : 'unavailable');
+    showStatistics(state, null, canFetch ? 'loading' : 'unavailable');
     list.addEventListener('focusout', () => setTimeout(() => {
       if (state.pending) showStatistics(state, state.pending.payload, state.pending.mode);
     }, 0));
     liveGroups.push(state);
     container.append(section);
   }
-  if (['http:', 'https:'].includes(location.protocol) && liveGroups.length) {
+  if (canFetch && liveGroups.length) {
     liveGroups.forEach(refresh);
     setInterval(() => {
       if (document.hidden) return;
