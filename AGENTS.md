@@ -1,14 +1,16 @@
 # Kontext projektu pro další chaty
 
-Poslední aktualizace: 6. 11. 2026. Tento soubor čti při zahájení práce v projektu. Po podstatných změnách aktualizuj příslušné části, zejména aktuální stav a rozpracované návrhy. Je to mapa projektu; před úpravou ověř skutečný stav dotčeného kódu a `git status`, protože soubory se mohou mezitím změnit.
+Poslední aktualizace: 7. 11. 2026. Tento soubor čti při zahájení práce v projektu. Po podstatných změnách aktualizuj příslušné části, zejména aktuální stav a rozpracované návrhy. Je to mapa projektu; před úpravou ověř skutečný stav dotčeného kódu a `git status`, protože soubory se mohou mezitím změnit.
 
 ## Vizuální navázání 6. 11. 2026 — původní nadpisy a zarovnané řádky TOP 3
 
-Uživatel dvěma screenshoty požádal o návrat názvů a sjednocení řádků. Nadpisy jsou opět „Hry“ a „Interpreti / kapely“ z config.js. U čerstvých statistik je doprovodný řádek skrytý a nadpis má původní spodní linku a odsazení; zdroj, období a čas zůstávají v title nadpisu. Při načítání, výpadku či použití uložených výsledků zůstává stav viditelný, aby nebyla zastřena neaktuálnost. Skutečné statistiky, obnovování, cache a serverové ochrany se nemění.
+Uživatel dvěma screenshoty požádal o návrat názvů a sjednocení řádků. Nadpisy jsou opět „Hry“ a „Interpreti / kapely“ z config.js. U čerstvých statistik má nadpis původní spodní linku a odsazení. Zdroj, období a čas zůstávají v title nadpisu. Od úpravy 7. 11. 2026 se stavový `<p>` vkládá jen při načítání, výpadku či použití uložených výsledků a po úspěšném načtení se odstraní z DOM.
 
 Na šířkách nad 660 px oba panely používají sdílené CSS subgrid řádky pro nadpis, stav a tři místa. Každá dvojice položek roste podle delšího obsahu a oddělovací linky i obrázky lícují. Nezavádí se pevná výška ani náhradní texty k interpretům. Mobil si ponechává přirozenou výšku panelů pod sebou; bez podpory subgrid je zachované původní rozložení.
 
 Ověření této úpravy: 60 kontrol pěti šířek × tři motivy × běžný/klidný režim nad čerstvými i uloženými výsledky; dalších 30 kontrol dlouhých názvů a výpadku jen jednoho zdroje. Na desktopu mají dvojice všech tří řádků shodnou výšku i svislou pozici s přesností pod 1 px. Bez přetékání a JS výjimek, zachovaný focus a Ctrl+K/Esc, stav bez cache zůstává srozumitelný. Vizuálně prohlédnut desktop i mobil; prošly build, syntaktická kontrola a git diff --check. Kontrola známých tajných hodnot v pracovních/publikačních souborech a historii bez shody. Pomocné testy a screenshoty v %TEMP%/borik-production-qa/.
+
+Po odstranění skrytých prvků prošlo 60 místních kontrol zarovnání a přetékání s dlouhými názvy a částečným výpadkem. Ověřeno načítání, odstranění obou prvků při čerstvých i prázdných výsledcích, návrat hlášky při výpadku, obnova s fokusem a expirace uložených výsledků. Prošel build i 18 Node testů.
 
 ## Dokončeno 6. 11. 2026 — skutečné TOP 3 nasazené na Netlify
 

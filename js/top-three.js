@@ -107,14 +107,27 @@
   }
   function updateNote(state) {
     const { payload, mode } = state.view;
-    const service = state.source === 'steam' ? 'Steam' : 'Spotify';
-    state.note.textContent = payload ? `${sources[state.source].periods[payload.period]}${mode === 'saved' ? ' · uložené údaje' : ''} · ${ageText(payload.updatedAt)}`
-      : `${service} · ${mode === 'loading' ? 'načítám statistiky…' : 'statistiky nejsou dostupné'}`;
-    state.note.hidden = mode === 'fresh';
-    state.note.closest('section').classList.toggle('has-statistics', !state.note.hidden);
-    if (payload) state.heading.title = `${sources[state.source].periods[payload.period]} · Načteno: ${new Date(payload.updatedAt).toLocaleString('cs-CZ')}`;
+    const period = payload ? sources[state.source].periods[payload.period] : '';
+    const loadedAt = payload ? `Načteno: ${new Date(payload.updatedAt).toLocaleString('cs-CZ')}` : '';
+    if (payload) state.heading.title = `${period} · ${loadedAt}`;
     else state.heading.removeAttribute('title');
-    if (payload) state.note.title = `Načteno: ${new Date(payload.updatedAt).toLocaleString('cs-CZ')}`;
+
+    if (mode === 'fresh') {
+      state.note?.remove();
+      state.note = null;
+      state.section.classList.remove('has-statistics');
+      return;
+    }
+    if (!state.note) {
+      state.note = textElement('p', 'favorite-group-note', '');
+      state.note.setAttribute('role', 'status');
+      state.list.before(state.note);
+      state.section.classList.add('has-statistics');
+    }
+    const service = state.source === 'steam' ? 'Steam' : 'Spotify';
+    state.note.textContent = payload ? `${period} · uložené údaje · ${ageText(payload.updatedAt)}`
+      : `${service} · ${mode === 'loading' ? 'načítám statistiky…' : 'statistiky nejsou dostupné'}`;
+    if (payload) state.note.title = loadedAt;
     else state.note.removeAttribute('title');
   }
   function showStatistics(state, payload, mode) {
@@ -175,24 +188,17 @@
     const list = document.createElement('ol');
     list.className = 'top-three-grid';
     list.setAttribute('role', 'list');
-    section.append(heading);
-    if (Object.hasOwn(sources, group.source)) {
-      const note = textElement('p', 'favorite-group-note', '');
-      note.setAttribute('role', 'status');
-      section.classList.add('has-statistics');
-      section.append(note);
-      const state = { group, source: group.source, heading, note, list, lastCheck: 0,
-        cacheKey: `borik-top-three-v2-${group.source}`, loading: false, latest: null, pending: null, view: null };
-      try {
-        state.latest = normalizePayload(JSON.parse(window.siteStorage?.get(state.cacheKey) || 'null'), state.source);
-      } catch { /* Poškozená nebo zablokovaná cache nemá bránit načtení webu. */ }
-      showStatistics(state, state.latest, state.latest ? 'saved' : ['http:', 'https:'].includes(location.protocol) ? 'loading' : 'unavailable');
-      list.addEventListener('focusout', () => setTimeout(() => {
-        if (state.pending) showStatistics(state, state.pending.payload, state.pending.mode);
-      }, 0));
-      liveGroups.push(state);
-    }
-    section.append(list);
+    section.append(heading, list);
+    const state = { group, source: group.source, section, heading, list, note: null, lastCheck: 0,
+      cacheKey: `borik-top-three-v2-${group.source}`, loading: false, latest: null, pending: null, view: null };
+    try {
+      state.latest = normalizePayload(JSON.parse(window.siteStorage?.get(state.cacheKey) || 'null'), state.source);
+    } catch { /* Poškozená nebo zablokovaná cache nemá bránit načtení webu. */ }
+    showStatistics(state, state.latest, state.latest ? 'saved' : ['http:', 'https:'].includes(location.protocol) ? 'loading' : 'unavailable');
+    list.addEventListener('focusout', () => setTimeout(() => {
+      if (state.pending) showStatistics(state, state.pending.payload, state.pending.mode);
+    }, 0));
+    liveGroups.push(state);
     container.append(section);
   }
   if (['http:', 'https:'].includes(location.protocol) && liveGroups.length) {
@@ -203,7 +209,7 @@
         if (state.view.payload && Date.now() - Date.parse(state.view.payload.updatedAt) > cacheLifetime) {
           state.latest = null;
           showStatistics(state, null, 'unavailable');
-        } else updateNote(state);
+        } else if (state.view.mode === 'saved') updateNote(state);
         refresh(state);
       });
     }, 60000);
