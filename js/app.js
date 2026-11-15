@@ -2,6 +2,7 @@
 (() => {
   'use strict';
   const config = window.SITE_CONFIG;
+  const root = document.documentElement;
   const $ = id => document.getElementById(id);
   const storage = {
     get(key) { try { return localStorage.getItem(key); } catch { return null; } },
@@ -39,15 +40,56 @@
     $('interests').append(tag);
   }
 
+  // Dlaždice věku: roky, dny od posledních narozenin a postup k dalším.
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const lastBirthday = new Date(year + age, month - 1, day);
+  const nextBirthday = new Date(year + age + 1, month - 1, day);
+  const dayMs = 86_400_000;
+  const daysSince = Math.max(0, Math.round((today - lastBirthday) / dayMs));
+  const daysLeft = Math.max(0, Math.round((nextBirthday - today) / dayMs));
+  const plural = (count, one, few, many) => count === 1 ? one : count >= 2 && count <= 4 ? few : many;
+  $('age-years').textContent = String(age);
+  $('age-years').dataset.count = String(age);
+  $('age-note').textContent = daysLeft === 0 || daysSince === 0
+    ? 'Dneska slavím. Dort vítán.'
+    : `a ${daysSince} ${plural(daysSince, 'den', 'dny', 'dní')}. Další level za ${daysLeft} ${plural(daysLeft, 'den', 'dny', 'dní')}.`;
+  $('age-fill').style.setProperty('--age-progress', (daysSince / Math.max(1, daysSince + daysLeft)).toFixed(3));
+
+  // Stavový pásek v liště skládají dohromady hodiny a živá data.
+  const tickerParts = { time: '', status: '', game: '', music: '' };
+  window.siteTicker = {
+    set(key, text) {
+      tickerParts[key] = text || '';
+      $('ticker-text').textContent = Object.values(tickerParts).filter(Boolean).join(' · ');
+    },
+  };
+
+  const media = matchMedia('(prefers-reduced-motion: reduce)');
   const themes = ['violet', 'aurora', 'sunset'];
-  function setTheme(theme) {
-    if (!themes.includes(theme)) theme = 'violet';
-    document.documentElement.dataset.theme = theme;
+  function applyTheme(theme) {
+    root.dataset.theme = theme;
     document.querySelectorAll('[data-theme-choice]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.themeChoice === theme)));
     storage.set('borik-theme', theme);
+    window.dispatchEvent(new Event('themechange'));
   }
+  // Při kliknutí se nová barva rozlije kruhem z místa kliknutí (View Transitions API).
+  function setTheme(theme, origin) {
+    if (!themes.includes(theme)) theme = 'violet';
+    const animated = origin && document.startViewTransition && !window.siteCalm && root.dataset.theme !== theme;
+    if (!animated) { applyTheme(theme); return; }
+    root.style.setProperty('--vt-x', `${origin.x}px`); root.style.setProperty('--vt-y', `${origin.y}px`);
+    root.classList.add('vt-circle');
+    const transition = document.startViewTransition(() => applyTheme(theme));
+    transition.finished.catch(() => {}).finally(() => root.classList.remove('vt-circle'));
+  }
+  const originOf = (event, element) => {
+    if (event && (event.clientX || event.clientY)) return { x: event.clientX, y: event.clientY };
+    const rect = element.getBoundingClientRect();
+    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+  };
+  const themeLabel = theme => theme.charAt(0).toUpperCase() + theme.slice(1);
   setTheme(storage.get('borik-theme') || config.defaultTheme);
-  document.querySelectorAll('[data-theme-choice]').forEach(button => button.addEventListener('click', () => setTheme(button.dataset.themeChoice)));
+  document.querySelectorAll('[data-theme-choice]').forEach(button => button.addEventListener('click', event => setTheme(button.dataset.themeChoice, originOf(event, button))));
   let toastTimer;
   function toast(message) {
     clearTimeout(toastTimer);
@@ -55,24 +97,119 @@
     $('toast').classList.add('visible');
     toastTimer = setTimeout(() => $('toast').classList.remove('visible'), 3500);
   }
+
+  let userCalm = storage.get('borik-calm') === 'true';
+  function updateMotion() {
+    window.siteCalm = media.matches || userCalm;
+    root.classList.toggle('calm', window.siteCalm);
+    $('motion-toggle').setAttribute('aria-pressed', String(window.siteCalm));
+    $('motion-toggle').textContent = window.siteCalm ? '◌ Klidný režim zapnutý' : '◌ Klidný režim';
+    window.dispatchEvent(new Event('motionchange'));
+  }
+  function toggleCalm() {
+    if (media.matches) { toast('Omezení animací je zapnuté v nastavení tvého zařízení.'); return; }
+    userCalm = !userCalm; storage.set('borik-calm', String(userCalm)); updateMotion();
+  }
+  updateMotion(); media.addEventListener('change', updateMotion);
+  $('motion-toggle').addEventListener('click', toggleCalm);
+
+  // Úvodní sekvence: jen při první návštěvě, nejdéle 1,5 s, jakákoli akce ji přeskočí.
+  if (!window.siteCalm && !storage.get('borik-intro')) {
+    root.classList.add('intro');
+    const endIntro = () => {
+      root.classList.remove('intro');
+      ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(type => window.removeEventListener(type, endIntro));
+    };
+    ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(type => window.addEventListener(type, endIntro, { passive: true }));
+    window.addEventListener('motionchange', () => { if (window.siteCalm) endIntro(); });
+    setTimeout(endIntro, 1500);
+  }
+  storage.set('borik-intro', '1');
+
+  // Příkazová paleta: hledání, šipky a Enter. Skryté příkazy se ukážou až po napsání.
   const dialog = $('command-dialog');
-  document.querySelectorAll('[data-open-menu]').forEach(button => button.addEventListener('click', () => dialog.showModal()));
+  const input = $('command-input');
+  const options = [...$('command-list').children];
+  const normalize = text => text.toLocaleLowerCase('cs').normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+  options.forEach((option, index) => {
+    if (!option.id) option.id = `command-option-${index}`;
+    option.dataset.search = normalize(`${option.textContent} ${option.dataset.command || ''}`);
+  });
+  let active = -1;
+  const visibleOptions = () => options.filter(option => !option.hidden);
+  function setActive(index) {
+    const visible = visibleOptions();
+    active = visible.length ? (index + visible.length) % visible.length : -1;
+    options.forEach(option => { option.classList.remove('is-active'); option.setAttribute('aria-selected', 'false'); });
+    const current = visible[active];
+    if (current) {
+      current.classList.add('is-active'); current.setAttribute('aria-selected', 'true');
+      current.scrollIntoView({ block: 'nearest' });
+      input.setAttribute('aria-activedescendant', current.id);
+    } else input.removeAttribute('aria-activedescendant');
+  }
+  function filterCommands() {
+    const query = normalize(input.value);
+    for (const option of options) {
+      const secret = option.hasAttribute('data-hidden');
+      const words = option.dataset.search.split(/\s+/);
+      option.hidden = secret
+        ? !(query.length >= 2 && words.some(word => word.startsWith(query)))
+        : Boolean(query) && !option.dataset.search.includes(query);
+    }
+    $('command-empty').hidden = visibleOptions().length > 0;
+    setActive(0);
+  }
+  function openMenu() {
+    if (dialog.open) return;
+    input.value = ''; dialog.showModal(); filterCommands(); input.focus();
+  }
+  const commands = {
+    calm: () => toggleCalm(),
+    warp: () => { if (window.siteCalm) toast('V klidném režimu motory nestartuju.'); else { window.siteEffects?.hyperspace(); toast('Warp pohon zapnut. Drž se.'); } },
+    meteors: () => { if (window.siteCalm) toast('V klidném režimu je obloha v klidu.'); else { window.siteEffects?.meteorShower(); toast('Meteorický roj. Něco si přej.'); } },
+    top: () => window.scrollTo({ top: 0, behavior: window.siteCalm ? 'auto' : 'smooth' }),
+    sudo: () => toast('Hezký pokus. Tady velím já.'),
+    42: () => toast('Odpověď sedí. Otázku pořád hledám.'),
+    kafe: () => toast('Chyba 418: jsem konvice na čaj.'),
+    ahoj: () => toast('Ahojkyy! Díky za návštěvu.'),
+    neofetch: () => toast(`${config.name.toLocaleLowerCase('cs')}@borik.space · ${age} let · motiv ${themeLabel(root.dataset.theme)} · na palubě od ${year}`),
+  };
+  function runCommand(name, event, element) {
+    if (name.startsWith('theme:')) {
+      const theme = name.slice(6);
+      const origin = originOf(event, element);
+      dialog.close(); setTheme(theme, origin); toast(`Nová atmosféra: ${themeLabel(theme)}`);
+      return;
+    }
+    dialog.close(); commands[name]?.();
+  }
+  window.siteActions = { toast, setTheme, toggleCalm, openMenu, runCommand: name => commands[name]?.() };
+  document.querySelectorAll('[data-open-menu]').forEach(button => button.addEventListener('click', openMenu));
   $('close-menu').addEventListener('click', () => dialog.close());
   dialog.addEventListener('click', event => {
     const rect = dialog.getBoundingClientRect();
     if (event.target === dialog && (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom)) dialog.close();
   });
   document.querySelectorAll('[data-close-menu]').forEach(link => link.addEventListener('click', () => dialog.close()));
+  document.querySelectorAll('[data-run]').forEach(button => button.addEventListener('click', event => runCommand(button.dataset.run, event, button)));
+  input.addEventListener('input', filterCommands);
+  input.addEventListener('keydown', event => {
+    if (event.key === 'ArrowDown') { event.preventDefault(); setActive(active + 1); }
+    else if (event.key === 'ArrowUp') { event.preventDefault(); setActive(active - 1); }
+    else if (event.key === 'Enter') { event.preventDefault(); visibleOptions()[active]?.click(); }
+  });
   document.addEventListener('keydown', event => {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
       event.preventDefault();
-      if (dialog.open) dialog.close(); else dialog.showModal();
+      if (dialog.open) dialog.close(); else openMenu();
     }
   });
-  $('cycle-theme').addEventListener('click', () => {
-    const next = themes[(themes.indexOf(document.documentElement.dataset.theme) + 1) % themes.length];
-    setTheme(next); dialog.close();
-    toast(`Barevný motiv: ${next.charAt(0).toUpperCase() + next.slice(1)}`);
+  $('cycle-theme').addEventListener('click', event => {
+    const next = themes[(themes.indexOf(root.dataset.theme) + 1) % themes.length];
+    const origin = originOf(event, $('cycle-theme'));
+    dialog.close(); setTheme(next, origin);
+    toast(`Nová atmosféra: ${themeLabel(next)}`);
   });
   document.querySelectorAll('[data-copy-discord]').forEach(button => button.addEventListener('click', async () => {
     dialog.close();
@@ -80,20 +217,6 @@
     catch { window.prompt('Zkopíruj moje Discord jméno:', config.discordUsername); }
   }));
 
-  const media = matchMedia('(prefers-reduced-motion: reduce)');
-  let userCalm = storage.get('borik-calm') === 'true';
-  function updateMotion() {
-    window.siteCalm = media.matches || userCalm;
-    document.documentElement.classList.toggle('calm', window.siteCalm);
-    $('motion-toggle').setAttribute('aria-pressed', String(window.siteCalm));
-    $('motion-toggle').textContent = window.siteCalm ? '◌ Klidný režim zapnutý' : '◌ Klidný režim';
-    window.dispatchEvent(new Event('motionchange'));
-  }
-  updateMotion(); media.addEventListener('change', updateMotion);
-  $('motion-toggle').addEventListener('click', () => {
-    if (media.matches) { toast('Omezení animací je zapnuté v nastavení tvého zařízení.'); return; }
-    userCalm = !userCalm; storage.set('borik-calm', String(userCalm)); updateMotion();
-  });
   const phrases = config.rotatingNames.filter(name => typeof name === 'string' && name.trim());
   if (!phrases.length) phrases.push(config.name);
   let phrase = 0, character = phrases[0].length, deleting = true, typingTimer;
@@ -121,15 +244,27 @@
   renderName(); restartTyping();
   window.addEventListener('motionchange', restartTyping);
   document.addEventListener('visibilitychange', restartTyping);
-  const clockFormat = new Intl.DateTimeFormat('cs-CZ', { timeZone: 'Europe/Prague', hour: '2-digit', minute: '2-digit', hour12: false });
-  let clockTimer;
+
+  // Pražský čas: živé hodiny v dlaždici, v patičce bia a ve stavovém pásku.
+  const clockFormat = new Intl.DateTimeFormat('cs-CZ', { timeZone: 'Europe/Prague', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+  const clockNotes = [[5, 'Hluboká noc. Asi ještě nespím.'], [9, 'Ráno. Pomalý rozjezd.'], [15, 'Přes den. Nejspíš škola.'], [19, 'Odpoledne. Čas na hry.'], [23, 'Večer. Sluchátka na uších.'], [24, 'Pozdní večer. Ještě jednu písničku.']];
+  let lastMinute = '', lastSecond = -1, handTurns = 0;
   function updateClock() {
-    clearTimeout(clockTimer);
-    $('local-time').textContent = `${clockFormat.format(new Date())} · MŮJ ČAS`;
-    // Každý další termín odvozujeme od skutečného času, aby se zpoždění nesčítalo.
-    if (!document.hidden) clockTimer = setTimeout(updateClock, 60_000 - Date.now() % 60_000);
+    if (document.hidden) return;
+    const parts = Object.fromEntries(clockFormat.formatToParts(new Date()).map(part => [part.type, part.value]));
+    const minute = `${parts.hour}:${parts.minute}`;
+    $('clock-seconds').textContent = `:${parts.second}`;
+    const second = Number(parts.second);
+    if (second < lastSecond) handTurns++; // Ručička se nikdy nevrací zpět.
+    lastSecond = second;
+    $('clock-hand').style.setProperty('--hand', `${(handTurns * 60 + second) * 6}deg`);
+    if (minute === lastMinute) return;
+    lastMinute = minute;
+    $('clock-value').firstChild.textContent = minute;
+    $('local-time').textContent = `${minute} · MŮJ ČAS`;
+    $('clock-note').textContent = clockNotes.find(([hour]) => Number(parts.hour) % 24 < hour)[1];
+    window.siteTicker.set('time', `Praha ${minute}`);
   }
-  updateClock();
+  updateClock(); setInterval(updateClock, 1000);
   document.addEventListener('visibilitychange', updateClock);
-  window.addEventListener('pageshow', updateClock);
 })();
