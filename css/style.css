@@ -669,7 +669,8 @@ dialog { width: min(520px, calc(100% - 32px)); padding: 22px; border-radius: 20p
 .radar i:nth-child(2) { animation-delay: -.9s !important; }
 .radar i:nth-child(3) { animation-delay: -1.8s !important; }
 @keyframes radar-ping { 0% { transform: scale(.35); opacity: .75; } 100% { transform: scale(1.15); opacity: 0; } }
-.radar .tile-sdot { position: relative; width: 14px; height: 14px; animation: none; }
+.radar .tile-sdot { position: relative; inset: auto; width: 14px; height: 14px; animation: none; box-shadow: none; }
+.tile .service-label { color: var(--dim); }
 .presence-paused .radar i { animation-play-state: paused; }
 .online-tile .tile-value, .online-tile .tile-note { max-width: calc(100% - 96px); }
 
@@ -704,12 +705,6 @@ a.favorite-card:hover .favorite-link, a.favorite-card:focus-visible .favorite-li
   }
 }
 
-/* Přepínač ladění barev podle hudby. */
-.theme-options { flex-wrap: wrap; justify-content: flex-end; }
-.tune-toggle { margin-left: 8px; border-color: #ffffff16 !important; }
-.tune-icon { display: grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; font-size: 11px; background: #ffffff14; color: var(--muted); }
-.tune-toggle[aria-pressed="true"] .tune-icon { background: var(--accent); color: #14151d; }
-
 .calm .radar i, .calm .favorite-meter i, .calm #typed span { animation: none !important; }
 
 @media (max-width: 850px) {
@@ -732,7 +727,4 @@ a.favorite-card:hover .favorite-link, a.favorite-card:focus-visible .favorite-li
   .favorite-card { gap: 12px; min-height: 76px; margin: 0 -8px; padding: 12px 8px; }
   .favorite-rank { flex-basis: 30px; font-size: 22px; }
   .favorite-link { padding: 6px 9px; font-size: 10px; }
-  .theme-options { justify-content: flex-start; }
-  .theme-options button { flex: 1 1 28%; }
-  .tune-toggle { flex: 1 1 100% !important; margin: 4px 0 0; }
 }

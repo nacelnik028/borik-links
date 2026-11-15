@@ -100,8 +100,9 @@
   }
   window.siteTune = {
     get enabled() { return tuneEnabled; },
-    set(on, instant) {
-      tuneEnabled = Boolean(on); storage.set('borik-tune', tuneEnabled ? 'on' : 'off'); syncTuneButtons();
+    // persist = false platí jen do konce návštěvy (ruční volba motivu), jinak se volba uloží.
+    set(on, instant, persist = true) {
+      tuneEnabled = Boolean(on); if (persist) storage.set('borik-tune', tuneEnabled ? 'on' : 'off'); syncTuneButtons();
       if (!tuneEnabled) clearTune(instant); else if (spotify) tuneFromArt(spotify.album_art_url);
     },
     toggle() {

@@ -80,8 +80,8 @@
     if (!themes.includes(theme)) theme = 'violet';
     // Ruční volba motivu má přednost před barvou z obalu alba.
     const untune = Boolean(origin) && root.classList.contains('is-tuned');
-    const change = () => { applyTheme(theme); if (untune) window.siteTune?.set(false, true); };
-    if (untune) setTimeout(() => toast(`Motiv ${themeLabel(theme)}. Barvy podle hudby jsem vypnul, zapneš je tlačítkem Podle hudby.`), 50);
+    const change = () => { applyTheme(theme); if (untune) window.siteTune?.set(false, true, false); };
+    if (untune) setTimeout(() => toast(`Motiv ${themeLabel(theme)}. Barvy podle hudby jsou pro tuhle návštěvu vypnuté.`), 50);
     const animated = origin && document.startViewTransition && !window.siteCalm && (untune || root.dataset.theme !== theme);
     if (!animated) { change(); return; }
     root.style.setProperty('--vt-x', `${origin.x}px`); root.style.setProperty('--vt-y', `${origin.y}px`);
