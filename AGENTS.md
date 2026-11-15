@@ -56,7 +56,7 @@ Aktuální hry v pořadí: Kingdom Come: Deliverance II, Cyberpunk 2077, RimWorl
 
 ## Aktuální stav: směr „Kosmická observatoř“ (15. 11. 2026)
 
-Uživatel si ze tří návrhů vybral směr Kosmická observatoř. Realizováno v jednom průchodu, nic není commitnuté. Nová pravidla jsou v `css/style.css` v bloku za komentářem „Observatoř“ na konci souboru; pozdější pravidla tam záměrně přebíjejí starší včetně starších media queries.
+Uživatel si ze tří návrhů vybral směr Kosmická observatoř. Realizováno v jednom průchodu, commitnuto ve větvi `observator` (do `main` zatím nesloučeno). Nová pravidla jsou v `css/style.css` v bloku za komentářem „Observatoř“ na konci souboru; pozdější pravidla tam záměrně přebíjejí starší včetně starších media queries.
 
 - **Typografie:** základ 16 px, bio 15 px, drobné popisky v systémovém monospace (`--mono`, žádný nový font). Jméno v hero má `--name-size` (až 148 px), dlouhá jména 54 %. Písmo jména má gradient motivu s pomalým posunem (`background-clip: text`, bez podpory zůstává barva akcentu). Šedé texty pod AA byly sjednoceny na `--dim` (#9495a3, nejméně 5,7:1).
 - **Záře:** `#aurora-gl` kreslí tři závoje v různé hloubce, reaguje na myš a scroll, pod úvodem zeslábne. Kreslí v 50 % rozlišení (33 % a zhruba 30 fps na dotykových zařízeních), při skryté kartě stojí, v klidném režimu vykreslí jeden statický snímek. Barvy čte z `--accent-rgb` a `--secondary-rgb` (každý motiv je musí mít) při `themechange`. Když WebGL není (nebo `?nogl` v URL pro test), chybí třída `has-gl` a zůstává původní SVG záře.
