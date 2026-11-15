@@ -1,6 +1,6 @@
 # Kontext projektu pro další chaty
 
-Poslední aktualizace: 19. 10. 2026. Tento soubor čti při zahájení práce v projektu. Po podstatných změnách aktualizuj příslušné části, zejména aktuální stav a rozpracované návrhy. Je to mapa projektu; před úpravou ověř skutečný stav dotčeného kódu a `git status`, protože soubory se mohou mezitím změnit.
+Poslední aktualizace: 15. 11. 2026. Tento soubor čti při zahájení práce v projektu. Po podstatných změnách aktualizuj příslušné části, zejména aktuální stav a rozpracované návrhy. Je to mapa projektu; před úpravou ověř skutečný stav dotčeného kódu a `git status`, protože soubory se mohou mezitím změnit.
 
 ## Účel a styl
 
@@ -25,9 +25,11 @@ Osobní český web Víta (Boříka), značka `borik.space`: představení, hudb
 | `js/app.js` | Vykreslení bia a zájmů, věk, psaní jmen, motivy, schránka, dialog, čas a klidný režim. |
 | `js/top-three.js` | Generování dvou žebříčků a karet z `SITE_CONFIG.topThree`. |
 | `js/presence.js` | Discord avatar/stav, poslední online, herní aktivita a Spotify přes Lanyard. |
-| `js/effects.js` | Canvas hvězdy, padající hvězdy, vlastní kurzor a reakce záře na myš. |
+| `js/aurora.js` | Polární záře jako WebGL shader (čisté WebGL); bez WebGL zůstává SVG záře. |
+| `js/effects.js` | Canvas hvězdy s parallaxem a warpem, meteory, hyperprostor, vlastní kurzor, světlo karet. |
+| `js/interactions.js` | Plovoucí lišta, příjezd sekcí, odpočet čísel, magnet, náklon avataru, souhvězdí, easter eggy. |
 
-Skripty se načítají přes `defer` v pořadí config → app → top-three → presence → effects. `app.js` poskytuje ostatním `window.siteStorage`, `window.siteCalm` a událost `motionchange`. Zachovej potřebné ID elementů při změně HTML, nebo současně uprav jejich použití v JS.
+Skripty se načítají přes `defer` v pořadí config → app → top-three → presence → aurora → effects → interactions. `app.js` poskytuje ostatním `window.siteStorage`, `window.siteCalm`, `window.siteTicker.set(klíč, text)`, `window.siteActions` (toast, setTheme, toggleCalm, openMenu) a události `motionchange` a `themechange`. `effects.js` poskytuje `window.siteEffects` (`meteorShower()`, `hyperspace()`; v klidném režimu vrací `false`). Zachovej potřebné ID elementů při změně HTML, nebo současně uprav jejich použití v JS.
 
 ## Obsah a rozložení
 
@@ -45,14 +47,36 @@ Aktuální hry v pořadí: Kingdom Come: Deliverance II, Cyberpunk 2077, RimWorl
 ## Ovládání a živá data
 
 - Motivy: `violet`, `aurora`, `sunset`; uložená volba přebíjí `defaultTheme`.
-- LocalStorage klíče: `borik-theme`, `borik-calm`, `_lo` (čas posledního online stavu zaznamenaného tímto prohlížečem). Přístup k úložišti je ošetřen pro případ blokování.
+- LocalStorage klíče: `borik-theme`, `borik-calm`, `borik-intro` (úvodní sekvence už proběhla), `_lo` (čas posledního online stavu zaznamenaného tímto prohlížečem). Přístup k úložišti je ošetřen pro případ blokování.
 - Ctrl+K / Cmd+K přepíná nativní dialog, Esc jej zavře. Dialog nabízí kotvy, kopírování Discordu a změnu motivu.
 - Čas se zobrazuje pro `Europe/Prague`; věk se počítá z narozenin v konfiguraci podle data prohlížeče.
 - Klidný režim i `prefers-reduced-motion` omezují pohyb. Systémové omezení pohybu nelze tlačítkem přebít. Animace reagují na skrytí karty, vlastní kurzor na jemný ukazatel.
 - Lanyard: `wss://api.lanyard.rest/socket`, odběr podle `discordId`, heartbeat, timeout 12 s a opakování spojení s prodlevou rostoucí od 3 do 30 s.
 - Rozlišují se načítání, neaktivita a nedostupnost služby. „Naposledy online“ není úplná historie Discordu. Spotify progress běží po sekundě; živá data vyžadují internet a profil dostupný přes Lanyard.
 
-## Aktuální stav: kompaktní favorité
+## Aktuální stav: směr „Kosmická observatoř“ (15. 11. 2026)
+
+Uživatel si ze tří návrhů vybral směr Kosmická observatoř. Realizováno v jednom průchodu, nic není commitnuté. Nová pravidla jsou v `css/style.css` v bloku za komentářem „Observatoř“ na konci souboru; pozdější pravidla tam záměrně přebíjejí starší včetně starších media queries.
+
+- **Typografie:** základ 16 px, bio 15 px, drobné popisky v systémovém monospace (`--mono`, žádný nový font). Jméno v hero má `--name-size` (až 148 px), dlouhá jména 54 %. Písmo jména má gradient motivu s pomalým posunem (`background-clip: text`, bez podpory zůstává barva akcentu). Šedé texty pod AA byly sjednoceny na `--dim` (#9495a3, nejméně 5,7:1).
+- **Záře:** `#aurora-gl` kreslí tři závoje v různé hloubce, reaguje na myš a scroll, pod úvodem zeslábne. Kreslí v 50 % rozlišení (33 % a zhruba 30 fps na dotykových zařízeních), při skryté kartě stojí, v klidném režimu vykreslí jeden statický snímek. Barvy čte z `--accent-rgb` a `--secondary-rgb` (každý motiv je musí mít) při `themechange`. Když WebGL není (nebo `?nogl` v URL pro test), chybí třída `has-gl` a zůstává původní SVG záře.
+- **Hero:** avatar je `<button id="avatar-core">` v `#avatar-tilt` (3D náklon přes `--tilt-x/y`, odlesk `--shine-x/y`), orbity jsou ve vrstvách `.orbit-layer[data-depth]` posouvaných podle kurzoru, tři planetky s odlesky. Při odjezdu se hero zavírá přes `animation-timeline: view()`.
+- **Úvodní sekvence:** třída `intro` na `<html>` jen při první návštěvě, nejdéle 1,5 s, přeskočí ji klik, klávesa, kolečko i dotyk. V klidném režimu se nespouští.
+- **Lišta:** sticky; po odjetí `#topbar-sentinel` dostane `.is-scrolled` (plovoucí panel) a ukáže `#ticker-text` („Praha 21:37 · online · hraju … · poslouchám …“). Do 660 px je ticker i odkaz Top 3 skrytý.
+- **Bento:** šestisloupcová mřížka: bio, Spotify, aktivita a tři dlaždice (`.clock-tile` s vteřinami a ručičkou, `.age-tile` s roky, dny a postupem k narozeninám, `.online-tile` se stavem a „naposledy online“). Do 660 px dva sloupce, hodiny přes celou šířku. `.live-column` už neexistuje.
+- **Naladění podle Spotify:** `presence.js` vzorkuje obal alba přes canvas (samostatný `Image` s `crossOrigin`), vybere nejsytější odstín a nastaví inline `--accent`, `--accent-rgb`, `--secondary`, `--secondary-rgb` a třídu `is-tuned`. Světlost akcentu je pevná kvůli kontrastu. Šedý obal nebo selhání CORS dá zelenou. Při neaktivitě a odpojení se vrací barvy motivu. Přechod jde přes View Transitions, pokud není klidný režim.
+- **Odkazy:** `.constellation` s SVG spojnicí mezi hvězdami `.si-star` (hadovitě po řádcích, přepočet při resize), karty mají barvu sítě v `--brand` (RGB složky v inline stylu). Karty nejsou vertikálně posunuté, jinak by spojnice vedla přes text.
+- **Interakce:** okraj a světlo karet sledují kurzor (`--card-x/y` na `.panel` i `.si`), `[data-magnetic]` se přitahuje přes `--mx/--my`, sekce s `[data-reveal]` přijíždějí přes scroll timeline (fallback třída `io-reveal` + IntersectionObserver), pořadí favoritů a věk se odpočítají, hvězdy mají parallax a při rychlém scrollu se protáhnou, přes stránku je jemné zrno (`.grain`).
+- **Motivy:** změna z kliknutí se rozlije kruhem z místa kliknutí (`vt-circle`, View Transitions API); bez podpory se přepne hned.
+- **Paleta příkazů:** dialog má `#command-input`, filtrování bez diakritiky, šipky a Enter. Položky s `data-run` spouští příkazy z `app.js` (motivy, klidný režim, warp, meteory, nahoru), položky s `data-hidden` (sudo, 42, kafe, ahoj, neofetch) se ukážou až po napsání aspoň dvou znaků. ID `cycle-theme` a `close-menu` zůstávají; skript nesmí přepisovat existující ID položek.
+- **Easter eggy:** pět rychlých kliknutí na avatar spustí meteorický roj, Konami kód hyperprostor.
+- Klidný režim a `prefers-reduced-motion` vypínají intro, warp, hyperprostor, meteory, magnet, náklon, animaci záře i odpočty.
+
+Ověření (headless Edge přes Python Playwright, softwarové WebGL): šířky 1440, 850, 660, 390 a 360 px × tři motivy × běžný a klidný režim bez vodorovného přetékání; konzole bez chyb; simulovaný WebSocket pro poslech, neaktivitu a odpojení včetně naladění barvy a návratu; paleta klávesnicí včetně skrytého příkazu a prázdného výsledku; Konami kód; pět kliknutí na avatar; náklon a magnet; focus; emulace dotyku; reduced motion; `?nogl`; stránka bez JavaScriptu. Při scrollu medián snímku 16,7 ms, 95. percentil 33 ms, žádná dlouhá úloha. Prohlédnuty screenshoty desktopu i mobilu. Prošel `node --check` všech JS a `git diff --check`.
+
+Neověřeno: plynulost na skutečné grafické kartě a na reálném telefonu, skutečné spojení s Lanyardem, CORS skutečných obalů ze Spotify CDN, čtečka obrazovky, Firefox a Safari.
+
+## Starší stav: kompaktní favorité
 
 Na žádost uživatele bylo 19. 10. 2026 realizováno zhutnění sekce Moje top 3:
 

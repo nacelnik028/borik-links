@@ -1,4 +1,4 @@
-/* Polární záře, hvězdy a kurzor. Klidný režim zastaví pohyb. */
+/* Hvězdy, warp při scrollu, meteory a kurzor. Klidný režim zastaví pohyb. */
 (() => {
   'use strict';
   const canvas = document.getElementById('stars');
@@ -13,6 +13,10 @@
   let width, height, stars = [], shoots = [], frame;
   let mx = -100, my = -100, rx = -100, ry = -100;
   let lastFrame = 0, nextShoot = 0;
+  // Scroll: hvězdy se posouvají podle hloubky a při rychlém scrollu se protáhnou.
+  let scrollPosition = 0, lastScroll = 0, warp = 0;
+  let hyperStart = -1;
+  const hyperDuration = 2400;
   function resetCursor() {
     document.body.classList.remove('cursor-visible', 'cursor-hover', 'cursor-pressed');
     mx = my = rx = ry = -100;
@@ -28,8 +32,9 @@
     canvas.style.width = `${width}px`; canvas.style.height = `${height}px`;
     if (!ctx) return;
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-    // Hustota roste i na širokých monitorech; jasné hvězdy jsou vidět přes záři.
-    const count = Math.min(650, Math.max(65, Math.floor(width * height / 9000)));
+    // Hustota roste i na širokých monitorech; na dotykových zařízeních je nižší.
+    const density = finePointer.matches ? 9000 : 14000;
+    const count = Math.min(650, Math.max(65, Math.floor(width * height / density)));
     stars = Array.from({ length: count }, () => {
       const brightness = Math.random();
       const bright = brightness > .85;
@@ -39,6 +44,7 @@
         radius: bright ? 1.4 + Math.random() * .8 : .65 + Math.random() * .7,
         opacity: bright ? .8 + Math.random() * .2 : .35 + Math.random() * .35,
         phase: Math.random() * Math.PI * 2,
+        depth: bright ? .1 + Math.random() * .08 : .02 + Math.random() * .07,
         bright,
         sparkle: brightness > .97,
       };
@@ -48,31 +54,57 @@
   function draw(time, delta) {
     if (!ctx) return;
     ctx.clearRect(0, 0, width, height);
+    const calm = window.siteCalm;
+    const hyper = !calm && hyperStart >= 0 ? Math.sin(Math.PI * Math.min(1, (time - hyperStart) / hyperDuration)) : 0;
+    if (hyperStart >= 0 && time - hyperStart > hyperDuration) hyperStart = -1;
+    const streak = calm ? 0 : Math.max(-90, Math.min(90, warp * 2.2));
+    const centerX = width / 2, centerY = height / 2;
     for (const star of stars) {
       const alpha = star.opacity * (.82 + .18 * Math.sin(time / 2200 + star.phase));
+      const x = star.x;
+      let y = star.y;
+      if (!calm) { y = (star.y - scrollPosition * star.depth) % height; if (y < 0) y += height; }
+      if (hyper > .01) {
+        // Hyperprostor: hvězdy se protáhnou od středu obrazovky.
+        const dx = x - centerX, dy = y - centerY;
+        const length = hyper * (.25 + star.depth * 3.2);
+        ctx.strokeStyle = `rgba(228,232,255,${alpha * (.35 + hyper * .5)})`;
+        ctx.lineWidth = star.radius * .9;
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + dx * length, y + dy * length); ctx.stroke();
+        continue;
+      }
+      if (Math.abs(streak) > 1.5) {
+        const length = streak * star.depth * 5;
+        ctx.strokeStyle = `rgba(228,232,255,${alpha * .7})`;
+        ctx.lineWidth = star.radius * 1.3;
+        ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + length); ctx.stroke();
+        continue;
+      }
       if (star.bright) {
         ctx.fillStyle = `rgba(192,204,255,${alpha * .08})`;
-        ctx.beginPath(); ctx.arc(star.x, star.y, star.radius * 3.5, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(x, y, star.radius * 3.5, 0, Math.PI * 2); ctx.fill();
       }
       if (star.sparkle) {
         const ray = star.radius * 2.8;
         ctx.strokeStyle = `rgba(228,232,255,${alpha * .35})`;
         ctx.lineWidth = .7;
         ctx.beginPath();
-        ctx.moveTo(star.x - ray, star.y); ctx.lineTo(star.x + ray, star.y);
-        ctx.moveTo(star.x, star.y - ray); ctx.lineTo(star.x, star.y + ray);
+        ctx.moveTo(x - ray, y); ctx.lineTo(x + ray, y);
+        ctx.moveTo(x, y - ray); ctx.lineTo(x, y + ray);
         ctx.stroke();
       }
       ctx.fillStyle = `rgba(235,238,255,${alpha})`;
-      ctx.beginPath(); ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x, y, star.radius, 0, Math.PI * 2); ctx.fill();
     }
-    if (window.siteCalm) return;
+    if (calm) return;
     if (time > nextShoot) {
-      shoots.push({ x: Math.random() * width * .8, y: Math.random() * height * .3, life: 1 });
+      shoots.push({ x: Math.random() * width * .8, y: Math.random() * height * .3, life: 1, delay: 0 });
       nextShoot = time + 6000 + Math.random() * 6000;
     }
     shoots = shoots.filter(shoot => shoot.life > 0);
     for (const shoot of shoots) {
+      if (shoot.delay > 0) { shoot.delay -= delta; continue; }
       shoot.x += delta * .4; shoot.y += delta * .19; shoot.life -= delta * .0009;
       const gradient = ctx.createLinearGradient(shoot.x - 100, shoot.y - 48, shoot.x, shoot.y);
       gradient.addColorStop(0, 'rgba(190,177,236,0)');
@@ -84,6 +116,10 @@
   function loop(time) {
     if (document.hidden || window.siteCalm) return;
     const delta = Math.min(time - lastFrame || 16, 40); lastFrame = time;
+    const currentScroll = scrollY;
+    const velocity = (currentScroll - lastScroll) / delta * 16;
+    lastScroll = currentScroll; scrollPosition = currentScroll;
+    warp += (velocity - warp) * (1 - Math.exp(-delta / 90));
     draw(time, delta);
     if (finePointer.matches) {
       const drift = 1 - Math.exp(-delta / 650);
@@ -108,9 +144,24 @@
     }
     document.body.classList.toggle('custom-cursor', finePointer.matches && !window.siteCalm);
     if (document.hidden || window.siteCalm || !finePointer.matches) resetCursor();
-    if (window.siteCalm) { shoots = []; draw(0, 0); }
-    else if (!document.hidden) { lastFrame = performance.now(); frame = requestAnimationFrame(loop); }
+    if (window.siteCalm) { shoots = []; hyperStart = -1; warp = 0; draw(0, 0); }
+    else if (!document.hidden) { lastFrame = performance.now(); lastScroll = scrollY; warp = 0; frame = requestAnimationFrame(loop); }
   }
+  // Skryté efekty pro paletu příkazů, Konami kód a kliknutí na avatar.
+  window.siteEffects = {
+    meteorShower() {
+      if (window.siteCalm) return false;
+      for (let index = 0; index < 34; index++) {
+        shoots.push({ x: Math.random() * width * 1.1 - width * .2, y: Math.random() * height * .55 - 60, life: .8 + Math.random() * .5, delay: index * 85 + Math.random() * 120 });
+      }
+      return true;
+    },
+    hyperspace() {
+      if (window.siteCalm) return false;
+      hyperStart = performance.now();
+      return true;
+    },
+  };
   document.addEventListener('pointermove', event => {
     if (!finePointer.matches || window.siteCalm || event.pointerType === 'touch') return;
     mx = event.clientX; my = event.clientY;
@@ -122,7 +173,8 @@
     targetAuroraY = (Math.max(0, Math.min(1, my / height)) - .5) * 20;
     spotlight.style.background = `radial-gradient(350px circle at ${mx}px ${my}px, rgba(var(--accent-rgb), .025), transparent 70%)`;
     updateCursorHover(event.target);
-    const card = event.target.closest('.panel');
+    // Světlo a okraj karty sledují kurzor přes CSS proměnné.
+    const card = event.target.closest('.panel, .si');
     if (card) {
       const rect = card.getBoundingClientRect();
       card.style.setProperty('--card-x', `${mx - rect.left}px`); card.style.setProperty('--card-y', `${my - rect.top}px`);

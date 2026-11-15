@@ -62,6 +62,7 @@
   for (const [groupIndex, group] of groups.entries()) {
     const section = document.createElement('section');
     section.className = 'panel favorite-group';
+    section.setAttribute('data-reveal', '');
     const heading = textElement('h3', 'favorite-group-heading', group.title);
     heading.id = `favorite-group-${groupIndex}`;
     section.setAttribute('aria-labelledby', heading.id);

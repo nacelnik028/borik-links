@@ -28,7 +28,9 @@ Po uložení obnov stránku. Texty se vykreslují jako text, HTML do konfigurace
 - `js/app.js` – obsah, psaní nadpisu, motivy, čas, kopírování a rychlé menu.
 - `js/top-three.js` – karty osobních favoritů z konfigurace.
 - `js/presence.js` – živý Discord profil, herní aktivita a Spotify přes Lanyard.
-- `js/effects.js` – kurzor, hvězdné pozadí, padající hvězdy a jemná reakce polární záře na myš.
+- `js/aurora.js` – polární záře jako WebGL shader; bez WebGL se použije jednodušší záře z `index.html`.
+- `js/effects.js` – kurzor, hvězdné pozadí, warp při scrollu, meteory a hyperprostor.
+- `js/interactions.js` – plovoucí lišta, příjezd sekcí, náklon avataru, magnetická tlačítka, souhvězdí odkazů a easter eggy.
 
 ## Ovládání
 
@@ -41,6 +43,14 @@ Obrázky favoritů jsou uložené v `assets/favorites/`; jejich zdroje najdeš v
 Mobilní úvod má menší avatar a oběžné kruhy. Při poslechu se Spotify panel jemně zeleně zvýrazní; při neaktivitě nebo výpadku se vrátí do základního vzhledu.
 
 Spotify při poslechu animuje zelený ekvalizér a spodní zvukovou vlnu. Vlna je dekorativní, nereaguje na skutečný zvuk skladby. Herní aktivitu odlišují tři pomalu pulzující tečky v barvě motivu. V klidném režimu jsou indikátory statické a při skrytí karty se jejich pohyb pozastaví.
+
+Jméno v úvodu je obří a prosvítá jím barva motivu. Avatar se naklání za kurzorem a orbity se posouvají v různé hloubce. Při první návštěvě proběhne krátká úvodní sekvence, kterou přeskočí jakýkoli klik nebo klávesa.
+
+Sekce O mně je mřížka dlaždic: bio, Spotify, aktivita, živé pražské hodiny, věk s odpočtem do narozenin a stav na Discordu. Když hraje Spotify, celý web převezme barvu z obalu alba; u šedého obalu nebo při chybě čtení zezelená. Po dohrání se vrátí barvy motivu. Při scrollu se v liště objeví stavový pásek s časem a tím, co zrovna dělám.
+
+Odkazy tvoří souhvězdí: každá karta má hvězdu v barvě sítě a spojnice se dokreslí při příjezdu. Barvu karty změníš v `index.html` v atributu `style="--brand: R, G, B"`.
+
+Rychlé menu je příkazová paleta: stačí psát (třeba „motiv“, „warp“ nebo „meteory“), šipkami vybrat a potvrdit Enterem. Pár příkazů je schovaných. Pětkrát rychle klikni na avatar nebo zadej Konami kód a uvidíš.
 
 Motiv se mění dole na stránce a zůstane uložený v prohlížeči. **Ctrl+K** (na Macu **⌘K**) otevře rychlé menu; **Esc** ho zavře. Klidný režim vypne pohyb včetně psaní nadpisu. Respektuje se také systémové nastavení omezeného pohybu.
 
