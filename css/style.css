@@ -452,10 +452,6 @@ h1 { margin-top: 26px; }
 .tile-unit { font-size: .42em; letter-spacing: 0; color: var(--muted); }
 .tile-note { margin-top: 9px; font-size: 12px; line-height: 1.5; color: var(--muted); }
 .clock-tile { position: relative; }
-.clock-face { position: absolute; top: 54px; right: 22px; width: 46px; height: 46px; border-radius: 50%; border: 1px solid #ffffff1c; }
-.clock-face::after { content: ''; position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px; border-radius: 50%; background: var(--accent); }
-.clock-hand { position: absolute; left: 50%; bottom: 50%; width: 1px; height: 19px; margin-left: -.5px; background: var(--accent); transform-origin: 50% 100%; transform: rotate(var(--hand, 0deg)); transition: transform .4s cubic-bezier(.3, 1.6, .5, 1); }
-.clock-ring { position: absolute; inset: 4px; border-radius: 50%; border: 1px dashed #ffffff14; }
 .age-track { height: 3px; margin-top: 14px; border-radius: 3px; background: #ffffff0d; overflow: hidden; }
 #age-fill { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--secondary), var(--accent)); transform-origin: 0 50%; transform: scaleX(var(--age-progress, 0)); transition: transform 1.2s cubic-bezier(.2, .8, .2, 1) .2s; }
 .tile-sdot { position: static; width: 12px; height: 12px; border: 0; }
@@ -563,7 +559,6 @@ dialog { width: min(520px, calc(100% - 32px)); padding: 22px; border-radius: 20p
   .bio-panel { padding: 24px; }
   .music-panel, .activity-panel { padding: 22px; }
   .tile { padding: 20px; }
-  .clock-face { display: none; }
   .si { padding: 18px 14px; gap: 11px; }
   .social-icon { width: 36px; height: 36px; }
   .social-copy strong { font-size: 14px; }
@@ -600,7 +595,6 @@ dialog { width: min(520px, calc(100% - 32px)); padding: 22px; border-radius: 20p
   .bio-panel, .music-panel, .activity-panel, .tile.clock-tile { grid-column: 1 / -1; grid-row: auto; }
   .tile.clock-tile { min-height: 0; }
   .clock-tile .tile-value { margin-top: 6px; }
-  .clock-face { display: block; top: auto; bottom: 20px; }
   .bio-panel h3 { font-size: 30px; }
   .bio-text { font-size: 15px; }
   .music-panel, .activity-panel { min-height: 0; padding: 22px; }
@@ -627,4 +621,118 @@ dialog { width: min(520px, calc(100% - 32px)); padding: 22px; border-radius: 20p
 @media (prefers-reduced-motion: reduce) {
   [data-magnetic] { --mx: 0px !important; --my: 0px !important; }
   .avatar-tilt { transform: none; }
+}
+
+/* ===== Druhé kolo: logo, TOP 3, dlaždice, ladění podle hudby ===== */
+/* Logo: planeta s prstencem. */
+.brand-icon { padding: 0; font-size: 0; overflow: hidden; }
+.logo-mark { display: block; width: 26px; height: 26px; overflow: visible; }
+.logo-planet { fill: var(--accent); }
+.logo-ring { fill: none; stroke: var(--secondary); stroke-width: 1.7; stroke-linecap: round; }
+.logo-ring-gap { fill: none; stroke: #17171f; stroke-width: 4.2; }
+.logo-moon { fill: #fff; transform-origin: 16px 16px; transition: transform .9s cubic-bezier(.2, .8, .2, 1); }
+.wordmark:hover .logo-moon, .footer-brand:hover .logo-moon { transform: rotate(200deg); }
+.footer-brand { display: grid; place-items: center; width: 34px; height: 34px; }
+.footer-brand .logo-mark { width: 30px; height: 30px; }
+.footer-brand .logo-ring-gap { stroke: var(--bg); }
+
+/* Úvod: jméno se skládá po písmenech. */
+@keyframes letter-in { from { opacity: 0; transform: translate3d(0, .5em, 0) rotate(8deg) scale(1.3); filter: blur(10px); } to { opacity: 1; transform: none; filter: blur(0); } }
+.intro .name-line { animation: none; background: none; color: var(--accent); filter: none; }
+.intro #typed span { display: inline-block; animation: letter-in .75s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(.3s + var(--i) * .11s); }
+.intro .typing-cursor { animation: intro-rise .4s ease-out .9s both; }
+
+/* Spotify: rozmazaný obal jako podsvícení panelu. */
+.sp-backdrop { position: absolute; inset: -30px; z-index: 0; background-size: cover; background-position: center; filter: blur(38px) saturate(1.5); opacity: 0; transform: scale(1.1); transition: opacity .8s ease; pointer-events: none; }
+.music-panel.is-playing .sp-backdrop { opacity: .2; }
+.music-panel > :not(.sp-backdrop) { position: relative; z-index: 1; }
+.music-panel > .sound-wave { z-index: 1; }
+
+/* Dlaždice: denní osa, level a radar. */
+.tile { min-height: 190px; }
+.tile-note { margin-top: 8px; }
+.day-track { position: relative; height: 6px; margin-top: 16px; border-radius: 6px; background: linear-gradient(90deg, #23253d 0%, #23253d 18%, var(--secondary) 34%, var(--accent) 50%, var(--secondary) 68%, #23253d 84%, #23253d 100%); opacity: .9; }
+.day-dot { position: absolute; top: 50%; left: calc(var(--day, .5) * 100%); width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: #fff; border: 3px solid var(--panel); box-shadow: 0 0 0 1px rgba(var(--accent-rgb), .6), 0 0 14px rgba(var(--accent-rgb), .8); transition: left 1s ease; }
+.day-scale { display: flex; justify-content: space-between; margin-top: 7px; font: 10px var(--mono); color: var(--dim); }
+.age-tile .tile-value { margin-top: auto; }
+.age-track { height: 10px; margin-top: 14px; border-radius: 3px; background: #ffffff12; -webkit-mask-image: repeating-linear-gradient(90deg, #000 0 calc(100% / 12 - 3px), transparent 0 calc(100% / 12)); mask-image: repeating-linear-gradient(90deg, #000 0 calc(100% / 12 - 3px), transparent 0 calc(100% / 12)); }
+#age-fill { border-radius: 0; box-shadow: 0 0 12px rgba(var(--accent-rgb), .5); }
+.online-tile { position: relative; overflow: hidden; }
+.radar { position: absolute; right: 26px; top: 50%; width: 76px; height: 76px; margin-top: -30px; display: grid; place-items: center; }
+.radar i { position: absolute; inset: 0; border: 1px solid var(--dim); border-radius: 50%; opacity: .22; }
+.radar i:nth-child(2) { inset: 13px; }
+.radar i:nth-child(3) { inset: 26px; }
+.radar:has(.online) i { border-color: #8ce2aa; }
+.radar:has(.idle) i { border-color: #edc976; }
+.radar:has(.dnd) i { border-color: #f17f8d; }
+.radar:has(.online) i, .radar:has(.idle) i, .radar:has(.dnd) i { animation: radar-ping 2.8s ease-out infinite; }
+.radar i:nth-child(2) { animation-delay: -.9s !important; }
+.radar i:nth-child(3) { animation-delay: -1.8s !important; }
+@keyframes radar-ping { 0% { transform: scale(.35); opacity: .75; } 100% { transform: scale(1.15); opacity: 0; } }
+.radar .tile-sdot { position: relative; width: 14px; height: 14px; animation: none; }
+.presence-paused .radar i { animation-play-state: paused; }
+.online-tile .tile-value, .online-tile .tile-note { max-width: calc(100% - 96px); }
+
+/* TOP 3: zarovnané řádky v obou panelech, velká čísla, proužek odehraného času. */
+.favorite-group { padding: 24px 26px 12px; }
+.has-statistics .favorite-group-heading { padding-bottom: 6px; border-bottom: 0; }
+.favorite-group-note { margin: 0; padding-bottom: 14px; border-bottom: 1px solid var(--line); font-size: 12px; line-height: 1.6; color: var(--muted); overflow-wrap: anywhere; }
+.favorite-status { padding: 22px 0; color: var(--muted); font-size: 14px; line-height: 1.7; overflow-wrap: anywhere; }
+.top-three-item { display: flex; }
+.favorite-card { flex: 1; min-width: 0; gap: 16px; min-height: 88px; margin: 0 -12px; padding: 14px 12px; border-radius: 14px; }
+a.favorite-card { transition: background .25s; }
+a.favorite-card:hover, a.favorite-card:focus-visible { background: rgba(var(--accent-rgb), .08); }
+a.favorite-card:hover .favorite-title, a.favorite-card:focus-visible .favorite-title { color: var(--accent); }
+.favorite-rank { flex: 0 0 38px; font: 700 26px/1 var(--display); letter-spacing: -.05em; color: transparent; -webkit-text-stroke: 1px #ffffff55; }
+.top-three-item:first-child .favorite-rank { color: var(--accent); -webkit-text-stroke: 0; text-shadow: 0 0 22px rgba(var(--accent-rgb), .55); }
+.favorite-image { transition: transform .35s cubic-bezier(.2, .8, .2, 1); }
+a.favorite-card:hover .favorite-image { transform: scale(1.1) rotate(-4deg); }
+.favorite-title { line-height: 1.3; transition: color .2s; }
+.favorite-description { margin-top: 4px; font: 12px/1.4 var(--mono); }
+.favorite-meter { display: block; height: 4px; max-width: 300px; margin-top: 9px; border-radius: 4px; background: #ffffff10; overflow: hidden; }
+.favorite-meter i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--secondary), var(--accent)); transform-origin: 0 50%; transform: scaleX(var(--share, 0)); animation: meter-grow 1.2s cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes meter-grow { from { transform: scaleX(0); } }
+.favorite-link { flex-shrink: 0; margin: 0; padding: 7px 12px; border: 1px solid rgba(var(--accent-rgb), .3); border-radius: 999px; font: 11px/1 var(--mono); color: var(--accent); transition: background .2s, color .2s, border-color .2s; }
+a.favorite-card:hover .favorite-link, a.favorite-card:focus-visible .favorite-link { background: var(--accent); border-color: var(--accent); color: #14151d; }
+@media (min-width: 661px) {
+  @supports (grid-template-rows: subgrid) {
+    #top-three-groups { grid-template-rows: auto auto repeat(3, auto); row-gap: 0; }
+    .favorite-group { display: grid; grid-row: span 5; grid-template-rows: subgrid; }
+    .favorite-group-heading { grid-row: 1; }
+    .favorite-group-note { grid-row: 2; }
+    .top-three-grid { display: grid; grid-row: 3 / span 3; grid-template-rows: subgrid; }
+  }
+}
+
+/* Přepínač ladění barev podle hudby. */
+.theme-options { flex-wrap: wrap; justify-content: flex-end; }
+.tune-toggle { margin-left: 8px; border-color: #ffffff16 !important; }
+.tune-icon { display: grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; font-size: 11px; background: #ffffff14; color: var(--muted); }
+.tune-toggle[aria-pressed="true"] .tune-icon { background: var(--accent); color: #14151d; }
+
+.calm .radar i, .calm .favorite-meter i, .calm #typed span { animation: none !important; }
+
+@media (max-width: 850px) {
+  .radar { right: 16px; width: 60px; height: 60px; margin-top: -22px; }
+  .radar i:nth-child(2) { inset: 10px; }
+  .radar i:nth-child(3) { inset: 20px; }
+  .online-tile .tile-value, .online-tile .tile-note { max-width: calc(100% - 70px); }
+  .favorite-link { padding: 6px 9px; }
+}
+@media (max-width: 660px) {
+  /* Na mobilu po odjetí úvodu nahradí odkazy v liště stavový pásek; navigace zůstává v rychlém menu. */
+  .topbar.is-scrolled nav { display: none; }
+  .topbar.is-scrolled .ticker { display: flex; }
+  .tile { min-height: 0; }
+  .tile-value { margin-top: 14px; }
+  .radar { display: none; }
+  #age-next { display: none; }
+  .online-tile .tile-value, .online-tile .tile-note { max-width: none; }
+  .favorite-group { padding: 20px 18px 8px; }
+  .favorite-card { gap: 12px; min-height: 76px; margin: 0 -8px; padding: 12px 8px; }
+  .favorite-rank { flex-basis: 30px; font-size: 22px; }
+  .favorite-link { padding: 6px 9px; font-size: 10px; }
+  .theme-options { justify-content: flex-start; }
+  .theme-options button { flex: 1 1 28%; }
+  .tune-toggle { flex: 1 1 100% !important; margin: 4px 0 0; }
 }

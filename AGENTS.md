@@ -2,6 +2,25 @@
 
 Poslední aktualizace: 15. 11. 2026. Tento soubor čti při zahájení práce v projektu. Po podstatných změnách aktualizuj příslušné části, zejména aktuální stav a rozpracované návrhy. Je to mapa projektu; před úpravou ověř skutečný stav dotčeného kódu a `git status`, protože soubory se mohou mezitím změnit.
 
+## Druhé kolo observatoře — 15. 11. 2026
+
+Pravidlo od uživatele: hotové změny vždy commitnout a hned pushnout přímo na `main` (produkce na Netlify), bez samostatné větve.
+
+Stav po sloučení: uživatel sloučil větev `observator` do `main` (2b2e773). `index.html`, `css/style.css`, `js/app.js` a `js/presence.js` jsou z observatoře, `js/top-three.js` a `config.js` z produkční verze. Sloučením vypadly úpravy `presence.js` z 21.–23. 10. (odkaz avataru na Discord profil, klikatelný obal a název skladby s kontrolou track ID, rozlišení her a aplikací, střízlivější texty stavů). Nevrácené; při zájmu je vzít z commitu 59461c3.
+
+Úpravy tohoto kola na žádost uživatele:
+
+- **TOP 3:** vrácené styly ztracené při sloučení (`.favorite-status`, `.favorite-group-note`, `.has-statistics`) a subgrid nad 660 px, takže řádky obou panelů mají stejnou výšku. Velká čísla pořadí (první plné v barvě akcentu, další obrysová), odkaz „Steam ↗“ / „Spotify ↗“ jako pilulka vpravo, u her proužek `.favorite-meter` s odehraným časem v poměru k první hře (`createCard(..., share)`). Obrázky zůstávají 48 × 48 s `cover`.
+- **Bio:** nadpis „Hry, hudba / a trocha lenosti.“ (v `index.html`).
+- **Dlaždice:** hodiny mají denní osu `.day-track` s tečkou podle pražského času a datum v záhlaví; věk je „LEVEL“ s dvanáctidílným proužkem do narozenin; Discord má radar `.radar`, který pulzuje jen při stavu online, nečinný a nerušit. Ručička `.clock-face` zrušena.
+- **Barvy podle hudby:** šedý nebo nečitelný obal už web nepřebarvuje na zelenou, zůstává vybraný motiv. Vzorkovací obrázek má vlastní adresu (`?tune=1`), protože stejný obal načtený bez CORS se vracel z cache a nešel přečíst. Ruční volba motivu při naladění ladění vypne a ukáže toast. Přepínač „Podle hudby“ (`[data-tune-toggle]`) je vedle motivů a v paletě příkazů; stav je v localStorage `borik-tune` (`off` = vypnuto, výchozí zapnuto). API: `window.siteTune.enabled`, `.set(on, instant)`, `.toggle()`.
+- **Logo:** planeta s prstencem jako inline SVG `.logo-mark` v liště a patičce, stejný motiv ve favikoně. Barvy bere z motivu.
+- **Další efekty:** úvodní sekvence skládá jméno po písmenech (`#typed span`, jen se třídou `intro`), Spotify panel má rozmazaný obal jako podsvícení (`#sp-backdrop`), na mobilu po odjetí úvodu nahradí odkazy v liště stavový pásek.
+
+Ověření: headless Edge přes Python Playwright se simulovaným WebSocketem a simulovanými odpověďmi obou funkcí TOP 3. Šířky 1440, 850, 661, 660, 390 a 360 px × tři motivy × běžný a klidný režim bez přetékání. Ověřeno naladění z barevného obalu, vypnutí ruční volbou motivu, zapnutí a vypnutí přepínačem, šedý i chybějící obal, návrat po dohrání, příkaz v paletě, shodná výška řádků a panelů TOP 3, proužky, mobilní pásek, reduced motion. Konzole bez chyb kromě záměrně chybějícího obalu. Prohlédnuty screenshoty. Prošlo 18 Node testů, build a `node --check`.
+
+Neověřeno: skutečné obaly ze Spotify CDN (oprava cache vychází z rozboru, ne z živého testu), skutečný Lanyard, produkční odpovědi funkcí po nasazení, plynulost na reálném hardwaru.
+
 ## Účel a styl
 
 Osobní český web Víta (Boříka), značka `borik.space`: představení, hudba, hry, živý Discord/Spotify stav a odkazy na sociální sítě. Tmavý vzhled, barevné akcenty, polární záře, hvězdy, orbitální dekorace kolem avataru a karty. Texty jsou neformální a osobní. S uživatelem komunikuj česky.

@@ -27,7 +27,7 @@
       return ['https:', 'http:'].includes(url.protocol) ? url.href : null;
     } catch { return null; }
   }
-  function createCard(entry, index, category, pendingText = 'Načítám…') {
+  function createCard(entry, index, category, pendingText = 'Načítám…', share = 0) {
     const title = typeof entry.title === 'string' ? entry.title.trim() : '';
     const url = title ? externalLink(entry.url) : null;
     const item = document.createElement('li');
@@ -70,13 +70,24 @@
     }
     content.append(textElement('h4', 'favorite-title', title || pendingText));
     if (entry.description && title) content.append(textElement('p', 'favorite-description', entry.description));
+    if (title && share > 0) {
+      // Proužek ukazuje odehraný čas v poměru k první hře.
+      const meter = document.createElement('span');
+      meter.className = 'favorite-meter';
+      meter.setAttribute('aria-hidden', 'true');
+      const fill = document.createElement('i');
+      fill.style.setProperty('--share', Math.min(1, share).toFixed(3));
+      meter.append(fill);
+      content.append(meter);
+    }
+    let hint = null;
     if (url) {
       const host = new URL(url).hostname;
       const destination = host === 'store.steampowered.com' ? 'Steam' : host === 'open.spotify.com' ? 'Spotify' : 'Otevřít';
-      const hint = textElement('span', 'favorite-link', `${destination} ↗`);
-      content.append(hint);
+      hint = textElement('span', 'favorite-link', `${destination} ↗`);
     }
     card.append(content);
+    if (hint) card.append(hint);
     item.append(card);
     return item;
   }
@@ -154,7 +165,8 @@
     updateNote(state);
     state.list.setAttribute('aria-busy', String(mode === 'loading'));
     let cards;
-    if (payload?.items.length) cards = payload.items.map((item, index) => createCard(item, index, state.group.category));
+    const topMinutes = payload?.items[0]?.minutes || 0;
+    if (payload?.items.length) cards = payload.items.map((item, index) => createCard(item, index, state.group.category, undefined, topMinutes ? item.minutes / topMinutes : 0));
     else if (mode === 'loading') cards = Array.from({ length: 3 }, (_, index) => createCard({}, index, state.group.category));
     else cards = [textElement('li', 'favorite-status', payload ? 'Zatím není dost údajů pro žebříček.' : 'Statistiky teď nelze načíst. Zkus to prosím později.')];
     state.list.replaceChildren(...cards);

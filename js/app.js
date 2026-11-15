@@ -50,9 +50,11 @@
   const plural = (count, one, few, many) => count === 1 ? one : count >= 2 && count <= 4 ? few : many;
   $('age-years').textContent = String(age);
   $('age-years').dataset.count = String(age);
+  $('age-next').textContent = daysLeft === 0 || daysSince === 0 ? 'LEVEL UP' : `LVL ${age + 1} ZA ${daysLeft} D`;
+  $('online-user').textContent = config.discordUsername;
   $('age-note').textContent = daysLeft === 0 || daysSince === 0
     ? 'Dneska slavím. Dort vítán.'
-    : `a ${daysSince} ${plural(daysSince, 'den', 'dny', 'dní')}. Další level za ${daysLeft} ${plural(daysLeft, 'den', 'dny', 'dní')}.`;
+    : `${daysSince} z ${daysSince + daysLeft} dní do levelu ${age + 1}.`;
   $('age-fill').style.setProperty('--age-progress', (daysSince / Math.max(1, daysSince + daysLeft)).toFixed(3));
 
   // Stavový pásek v liště skládají dohromady hodiny a živá data.
@@ -66,6 +68,7 @@
 
   const media = matchMedia('(prefers-reduced-motion: reduce)');
   const themes = ['violet', 'aurora', 'sunset'];
+  const themeLabel = theme => theme.charAt(0).toUpperCase() + theme.slice(1);
   function applyTheme(theme) {
     root.dataset.theme = theme;
     document.querySelectorAll('[data-theme-choice]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.themeChoice === theme)));
@@ -75,11 +78,15 @@
   // Při kliknutí se nová barva rozlije kruhem z místa kliknutí (View Transitions API).
   function setTheme(theme, origin) {
     if (!themes.includes(theme)) theme = 'violet';
-    const animated = origin && document.startViewTransition && !window.siteCalm && root.dataset.theme !== theme;
-    if (!animated) { applyTheme(theme); return; }
+    // Ruční volba motivu má přednost před barvou z obalu alba.
+    const untune = Boolean(origin) && root.classList.contains('is-tuned');
+    const change = () => { applyTheme(theme); if (untune) window.siteTune?.set(false, true); };
+    if (untune) setTimeout(() => toast(`Motiv ${themeLabel(theme)}. Barvy podle hudby jsem vypnul, zapneš je tlačítkem Podle hudby.`), 50);
+    const animated = origin && document.startViewTransition && !window.siteCalm && (untune || root.dataset.theme !== theme);
+    if (!animated) { change(); return; }
     root.style.setProperty('--vt-x', `${origin.x}px`); root.style.setProperty('--vt-y', `${origin.y}px`);
     root.classList.add('vt-circle');
-    const transition = document.startViewTransition(() => applyTheme(theme));
+    const transition = document.startViewTransition(change);
     transition.finished.catch(() => {}).finally(() => root.classList.remove('vt-circle'));
   }
   const originOf = (event, element) => {
@@ -87,7 +94,6 @@
     const rect = element.getBoundingClientRect();
     return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
   };
-  const themeLabel = theme => theme.charAt(0).toUpperCase() + theme.slice(1);
   setTheme(storage.get('borik-theme') || config.defaultTheme);
   document.querySelectorAll('[data-theme-choice]').forEach(button => button.addEventListener('click', event => setTheme(button.dataset.themeChoice, originOf(event, button))));
   let toastTimer;
@@ -171,6 +177,7 @@
     top: () => window.scrollTo({ top: 0, behavior: window.siteCalm ? 'auto' : 'smooth' }),
     sudo: () => toast('Hezký pokus. Tady velím já.'),
     42: () => toast('Odpověď sedí. Otázku pořád hledám.'),
+    tune: () => window.siteTune?.toggle(),
     kafe: () => toast('Chyba 418: jsem konvice na čaj.'),
     ahoj: () => toast('Ahojkyy! Díky za návštěvu.'),
     neofetch: () => toast(`${config.name.toLocaleLowerCase('cs')}@borik.space · ${age} let · motiv ${themeLabel(root.dataset.theme)} · na palubě od ${year}`),
@@ -179,7 +186,8 @@
     if (name.startsWith('theme:')) {
       const theme = name.slice(6);
       const origin = originOf(event, element);
-      dialog.close(); setTheme(theme, origin); toast(`Nová atmosféra: ${themeLabel(theme)}`);
+      const tuned = root.classList.contains('is-tuned');
+      dialog.close(); setTheme(theme, origin); if (!tuned) toast(`Nová atmosféra: ${themeLabel(theme)}`);
       return;
     }
     dialog.close(); commands[name]?.();
@@ -208,8 +216,9 @@
   $('cycle-theme').addEventListener('click', event => {
     const next = themes[(themes.indexOf(root.dataset.theme) + 1) % themes.length];
     const origin = originOf(event, $('cycle-theme'));
+    const tuned = root.classList.contains('is-tuned');
     dialog.close(); setTheme(next, origin);
-    toast(`Nová atmosféra: ${themeLabel(next)}`);
+    if (!tuned) toast(`Nová atmosféra: ${themeLabel(next)}`);
   });
   document.querySelectorAll('[data-copy-discord]').forEach(button => button.addEventListener('click', async () => {
     dialog.close();
@@ -225,7 +234,15 @@
   $('hero-heading').setAttribute('aria-label', `${config.greeting} ${config.name}`);
   nameLine.setAttribute('aria-hidden', 'true');
   function renderName() {
-    typed.textContent = phrases[phrase].slice(0, character);
+    const text = phrases[phrase].slice(0, character);
+    if (root.classList.contains('intro')) {
+      // Úvodní sekvence skládá jméno po písmenech.
+      typed.replaceChildren(...[...text].map((letter, index) => {
+        const span = document.createElement('span');
+        span.textContent = letter; span.style.setProperty('--i', String(index));
+        return span;
+      }));
+    } else typed.textContent = text;
     nameLine.classList.toggle('long-name', phrases[phrase].length > 7);
   }
   function tick() {
@@ -248,19 +265,19 @@
   // Pražský čas: živé hodiny v dlaždici, v patičce bia a ve stavovém pásku.
   const clockFormat = new Intl.DateTimeFormat('cs-CZ', { timeZone: 'Europe/Prague', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
   const clockNotes = [[5, 'Hluboká noc. Asi ještě nespím.'], [9, 'Ráno. Pomalý rozjezd.'], [15, 'Přes den. Nejspíš škola.'], [19, 'Odpoledne. Čas na hry.'], [23, 'Večer. Sluchátka na uších.'], [24, 'Pozdní večer. Ještě jednu písničku.']];
-  let lastMinute = '', lastSecond = -1, handTurns = 0;
+  const dateFormat = new Intl.DateTimeFormat('cs-CZ', { timeZone: 'Europe/Prague', weekday: 'short', day: 'numeric', month: 'numeric' });
+  let lastMinute = '';
   function updateClock() {
     if (document.hidden) return;
     const parts = Object.fromEntries(clockFormat.formatToParts(new Date()).map(part => [part.type, part.value]));
     const minute = `${parts.hour}:${parts.minute}`;
     $('clock-seconds').textContent = `:${parts.second}`;
-    const second = Number(parts.second);
-    if (second < lastSecond) handTurns++; // Ručička se nikdy nevrací zpět.
-    lastSecond = second;
-    $('clock-hand').style.setProperty('--hand', `${(handTurns * 60 + second) * 6}deg`);
     if (minute === lastMinute) return;
     lastMinute = minute;
     $('clock-value').firstChild.textContent = minute;
+    $('clock-date').textContent = `PRAHA · ${dateFormat.format(new Date()).toLocaleUpperCase('cs')}`;
+    // Tečka na denní ose: půlnoc vlevo, poledne uprostřed.
+    $('day-dot').style.setProperty('--day', ((Number(parts.hour) % 24 * 60 + Number(parts.minute)) / 1440).toFixed(4));
     $('local-time').textContent = `${minute} · MŮJ ČAS`;
     $('clock-note').textContent = clockNotes.find(([hour]) => Number(parts.hour) % 24 < hour)[1];
     window.siteTicker.set('time', `Praha ${minute}`);

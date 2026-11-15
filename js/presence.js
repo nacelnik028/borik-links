@@ -29,42 +29,45 @@
   const root = document.documentElement;
   const ticker = (key, text) => window.siteTicker?.set(key, text);
   // Naladění webu: akcent se vezme z obalu alba. Když obrázek nejde přečíst (CORS), použije se zelená.
-  const fallbackTune = [140, 226, 170];
   let tunedArt = null;
+  let tuneEnabled = storage.get('borik-tune') !== 'off';
+  const tuneButtons = document.querySelectorAll('[data-tune-toggle]');
+  const syncTuneButtons = () => tuneButtons.forEach(button => button.setAttribute('aria-pressed', String(tuneEnabled)));
   function hslToRgb(h, s, l) {
     const f = n => { const k = (n + h * 12) % 12; return Math.round(255 * (l - s * Math.min(l, 1 - l) * Math.max(-1, Math.min(k - 3, 9 - k, 1)))); };
     return [f(0), f(8), f(4)];
   }
-  function swapColors(change) {
-    if (document.startViewTransition && !window.siteCalm && !document.hidden) document.startViewTransition(change);
+  function swapColors(change, instant) {
+    if (!instant && document.startViewTransition && !window.siteCalm && !document.hidden) document.startViewTransition(change);
     else change();
   }
   function applyTune(hue, saturation) {
     swapColors(() => {
       // Světlost je pevná, aby text v barvě akcentu držel kontrast na tmavém pozadí.
-      const accent = hue === null ? fallbackTune : hslToRgb(hue, Math.max(.5, Math.min(.9, saturation)), .76);
-      const secondary = hue === null ? [96, 191, 198] : hslToRgb((hue + .09) % 1, .55, .64);
+      const accent = hslToRgb(hue, Math.max(.5, Math.min(.9, saturation)), .76);
+      const secondary = hslToRgb((hue + .09) % 1, .55, .64);
       root.style.setProperty('--accent', `rgb(${accent.join(', ')})`); root.style.setProperty('--accent-rgb', accent.join(', '));
       root.style.setProperty('--secondary', `rgb(${secondary.join(', ')})`); root.style.setProperty('--secondary-rgb', secondary.join(', '));
       root.classList.add('is-tuned');
       window.dispatchEvent(new Event('themechange'));
     });
   }
-  function clearTune() {
-    tunedArt = null;
+  // Bez použitelné barvy (šedý obal, obrázek nejde přečíst) zůstává motiv, který si návštěvník vybral.
+  function dropTune(instant) {
     if (!root.classList.contains('is-tuned')) return;
     swapColors(() => {
       ['--accent', '--accent-rgb', '--secondary', '--secondary-rgb'].forEach(name => root.style.removeProperty(name));
       root.classList.remove('is-tuned');
       window.dispatchEvent(new Event('themechange'));
-    });
+    }, instant);
   }
+  function clearTune(instant) { tunedArt = null; dropTune(instant); }
   function tuneFromArt(source) {
-    if (!source || source === tunedArt) return;
+    if (!tuneEnabled || !source || source === tunedArt) return;
     tunedArt = source;
     const probe = new Image();
     probe.crossOrigin = 'anonymous';
-    probe.onerror = () => { if (tunedArt === source) applyTune(null); };
+    probe.onerror = () => { if (tunedArt === source) dropTune(); };
     probe.onload = () => {
       if (tunedArt !== source) return;
       try {
@@ -88,12 +91,26 @@
           bucket.x += Math.cos(hue * Math.PI * 2) * weight; bucket.y += Math.sin(hue * Math.PI * 2) * weight;
         }
         const best = buckets.reduce((a, b) => b.weight > a.weight ? b : a);
-        if (best.weight < 6) { applyTune(null); return; }
+        if (best.weight < 6) { dropTune(); return; }
         applyTune((Math.atan2(best.y, best.x) / (Math.PI * 2) + 1) % 1, best.saturation / best.weight);
-      } catch { applyTune(null); }
+      } catch { dropTune(); }
     };
-    probe.src = source;
+    // Samostatná adresa: stejný obal načtený bez CORS do <img> by se jinak vrátil z cache a nešel by přečíst.
+    probe.src = `${source}${source.includes('?') ? '&' : '?'}tune=1`;
   }
+  window.siteTune = {
+    get enabled() { return tuneEnabled; },
+    set(on, instant) {
+      tuneEnabled = Boolean(on); storage.set('borik-tune', tuneEnabled ? 'on' : 'off'); syncTuneButtons();
+      if (!tuneEnabled) clearTune(instant); else if (spotify) tuneFromArt(spotify.album_art_url);
+    },
+    toggle() {
+      this.set(!tuneEnabled);
+      window.siteActions?.toast(tuneEnabled ? 'Barvy se ladí podle hudby. Když něco hraje, web si vezme barvu z obalu.' : 'Barvy podle hudby jsou vypnuté. Platí vybraný motiv.');
+    },
+  };
+  tuneButtons.forEach(button => button.addEventListener('click', () => window.siteTune.toggle()));
+  syncTuneButtons();
   const formatTime = ms => {
     const seconds = Math.max(0, Math.floor(ms / 1000));
     return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
@@ -183,6 +200,7 @@
       $('sp-song').textContent = spotify.song; $('sp-song').title = spotify.song; $('sp-artist').textContent = spotify.artist;
       setImage($('sp-art'), spotify.album_art_url);
       tuneFromArt(spotify.album_art_url);
+      $('sp-backdrop').style.backgroundImage = `url("${encodeURI(spotify.album_art_url)}")`;
       ticker('music', `poslouchám ${spotify.song}`);
       $('sp-link').hidden = !spotify.track_id;
       if (spotify.track_id) $('sp-link').href = `https://open.spotify.com/track/${encodeURIComponent(spotify.track_id)}`;
