@@ -257,6 +257,8 @@ dialog::backdrop { background: #05060bc9; backdrop-filter: blur(9px); }
   body.custom-cursor.cursor-visible dialog { cursor: auto; }
   body.custom-cursor.cursor-visible dialog button, body.custom-cursor.cursor-visible dialog a { cursor: pointer; }
   body.custom-cursor.cursor-visible:has(dialog[open]) #cur-dot, body.custom-cursor.cursor-visible:has(dialog[open]) #cur-ring { display: none; }
+  /* Změna barev (View Transitions) překryje stránku vrstvou, která by ukázala systémovou šipku vedle vlastního kurzoru. */
+  html:has(> body.custom-cursor.cursor-visible), html:has(> body.custom-cursor.cursor-visible)::view-transition { cursor: none; }
 }
 @keyframes enter { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 .hero-copy, .hero-art { animation: enter .75s ease-out both; }
@@ -520,6 +522,11 @@ dialog { width: min(520px, calc(100% - 32px)); padding: 22px; border-radius: 20p
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .7s; }
 .vt-circle::view-transition-old(root) { animation: none; }
 .vt-circle::view-transition-new(root) { animation: vt-circle .75s cubic-bezier(.4, 0, .2, 1) both; }
+/* Tečka a kroužek kurzoru nejsou součástí snímku stránky: nezamrznou ve staré barvě a během přechodu dál sledují myš. */
+#cur-dot { view-transition-name: cursor-dot; }
+#cur-ring { view-transition-name: cursor-ring; }
+::view-transition-group(cursor-dot), ::view-transition-group(cursor-ring), ::view-transition-new(cursor-dot), ::view-transition-new(cursor-ring) { animation: none; }
+::view-transition-old(cursor-dot), ::view-transition-old(cursor-ring) { display: none; }
 @keyframes vt-circle { from { clip-path: circle(0 at var(--vt-x, 50%) var(--vt-y, 50%)); } to { clip-path: circle(150vmax at var(--vt-x, 50%) var(--vt-y, 50%)); } }
 
 .calm .ticker-dot, .calm .hero-scroll-line::after { animation: none !important; }
