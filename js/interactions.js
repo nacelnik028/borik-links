@@ -47,11 +47,11 @@
   const ageYears = $('age-years');
   onceVisible([ageYears], () => countTo(ageYears, 0, Number(ageYears.dataset.count) || 0, 1100, String), .6);
 
-  // Magnetická tlačítka a karty: lehce se přitáhnou ke kurzoru.
+  // Magnetická tlačítka a karty: jen s efekty navíc (třída fx) se lehce přitáhnou ke kurzoru.
   for (const element of document.querySelectorAll('[data-magnetic]')) {
     const strength = element.classList.contains('si') ? .08 : .22;
     element.addEventListener('pointermove', event => {
-      if (!lively() || event.pointerType === 'touch') return;
+      if (!lively() || !root.classList.contains('fx') || event.pointerType === 'touch') return;
       const rect = element.getBoundingClientRect();
       element.style.setProperty('--mx', `${((event.clientX - rect.left - rect.width / 2) * strength).toFixed(1)}px`);
       element.style.setProperty('--my', `${((event.clientY - rect.top - rect.height / 2) * strength).toFixed(1)}px`);
@@ -114,9 +114,14 @@
   onceVisible([constellation], () => constellation.classList.add('is-drawn'), .35);
 
   // Easter eggy: pět rychlých kliknutí na avatar a Konami kód.
+  // Avatar je odkaz na Discord profil. Běžné kliknutí myší nebo prstem počká chvilku, jestli nepřijde další:
+  // samostatné (nebo dvojité) kliknutí otevře profil, rychlá série počítá do pěti. Klávesnice
+  // a otevření do nové karty (Ctrl, Shift, prostřední tlačítko) fungují jako obyčejný odkaz.
   const avatar = $('avatar-core');
   let clicks = 0, clickTimer;
-  avatar.addEventListener('click', () => {
+  avatar.addEventListener('click', event => {
+    if (event.detail === 0 || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
     clearTimeout(clickTimer);
     clicks++;
     if (!window.siteCalm) {
@@ -128,7 +133,10 @@
       else window.siteActions?.toast('Našel jsi tajemství. V klidném režimu ale obloha odpočívá.');
       return;
     }
-    clickTimer = setTimeout(() => { clicks = 0; }, 1600);
+    clickTimer = setTimeout(() => {
+      if (clicks <= 2) window.open(avatar.href, '_blank', 'noopener');
+      clicks = 0;
+    }, 360);
   });
   const konami = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
   let konamiIndex = 0;

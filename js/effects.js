@@ -1,6 +1,8 @@
-/* Hvězdy, warp při scrollu, meteory a kurzor. Klidný režim zastaví pohyb. */
+/* Hvězdy, sníh, meteory a kurzor. Warp při scrollu a náhodné meteory jen s efekty navíc (třída fx). */
 (() => {
   'use strict';
+  const root = document.documentElement;
+  const extras = () => root.classList.contains('fx');
   const canvas = document.getElementById('stars');
   const ctx = canvas.getContext('2d');
   const finePointer = matchMedia('(pointer: fine)');
@@ -17,6 +19,14 @@
   let scrollPosition = 0, lastScroll = 0, warp = 0;
   let hyperStart = -1;
   const hyperDuration = 2400;
+  // Sníh: pár desítek měkkých vloček, zapíná ho sky.js (prosinec nebo příkaz v paletě).
+  let snowing = false, flakes = [];
+  function makeFlake(top) {
+    const near = Math.random();
+    return { x: Math.random() * width, y: top ? -10 - Math.random() * height * .3 : Math.random() * height, radius: .8 + near * 1.8,
+      speed: .012 + near * .028, sway: Math.random() * Math.PI * 2, drift: .4 + Math.random() * .8, alpha: .25 + near * .45 };
+  }
+  function seedSnow() { flakes = snowing ? Array.from({ length: Math.min(110, Math.max(30, Math.floor(width * height / 18000))) }, () => makeFlake(false)) : []; }
   function resetCursor() {
     document.body.classList.remove('cursor-visible', 'cursor-hover', 'cursor-pressed');
     mx = my = rx = ry = -100;
@@ -49,6 +59,7 @@
         sparkle: brightness > .97,
       };
     });
+    seedSnow();
     if (window.siteCalm) draw(0, 0);
   }
   function draw(time, delta) {
@@ -57,7 +68,7 @@
     const calm = window.siteCalm;
     const hyper = !calm && hyperStart >= 0 ? Math.sin(Math.PI * Math.min(1, (time - hyperStart) / hyperDuration)) : 0;
     if (hyperStart >= 0 && time - hyperStart > hyperDuration) hyperStart = -1;
-    const streak = calm ? 0 : Math.max(-90, Math.min(90, warp * 2.2));
+    const streak = calm || !extras() ? 0 : Math.max(-90, Math.min(90, warp * 2.2));
     const centerX = width / 2, centerY = height / 2;
     for (const star of stars) {
       const alpha = star.opacity * (.82 + .18 * Math.sin(time / 2200 + star.phase));
@@ -98,8 +109,18 @@
       ctx.beginPath(); ctx.arc(x, y, star.radius, 0, Math.PI * 2); ctx.fill();
     }
     if (calm) return;
+    if (snowing) {
+      for (const flake of flakes) {
+        flake.y += flake.speed * delta; flake.sway += delta * .0012;
+        flake.x += Math.sin(flake.sway) * flake.drift * delta * .01;
+        if (flake.y > height + 10) Object.assign(flake, makeFlake(true));
+        if (flake.x < -10) flake.x += width + 20; else if (flake.x > width + 10) flake.x -= width + 20;
+        ctx.fillStyle = `rgba(240,244,255,${flake.alpha})`;
+        ctx.beginPath(); ctx.arc(flake.x, flake.y, flake.radius, 0, Math.PI * 2); ctx.fill();
+      }
+    }
     if (time > nextShoot) {
-      shoots.push({ x: Math.random() * width * .8, y: Math.random() * height * .3, life: 1, delay: 0 });
+      if (extras()) shoots.push({ x: Math.random() * width * .8, y: Math.random() * height * .3, life: 1, delay: 0 });
       nextShoot = time + 6000 + Math.random() * 6000;
     }
     shoots = shoots.filter(shoot => shoot.life > 0);
@@ -160,6 +181,11 @@
       if (window.siteCalm) return false;
       hyperStart = performance.now();
       return true;
+    },
+    get snowing() { return snowing; },
+    setSnow(on) {
+      if (snowing === Boolean(on)) return;
+      snowing = Boolean(on); seedSnow();
     },
   };
   document.addEventListener('pointermove', event => {

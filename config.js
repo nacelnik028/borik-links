@@ -28,6 +28,14 @@ window.SITE_CONFIG = {
       source: 'spotify',
     },
   ],
+  // Discord hlásí hry i aplikace stejně. Tady jim přiřaď druh podle přesného názvu:
+  // 'game' = „hraju“, 'app' = „používám“. Neuvedené aktivity se zobrazí jako „běží“.
+  activityKinds: {
+    'Visual Studio Code': 'app',
+    'Kingdom Come: Deliverance II': 'game',
+    'Cyberpunk 2077': 'game',
+    'RimWorld': 'game',
+  },
   discordId: '794089788289712130',
   discordUsername: 'nacelnik028',
   defaultTheme: 'violet', // violet, aurora, sunset

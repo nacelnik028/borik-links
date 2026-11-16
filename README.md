@@ -17,6 +17,7 @@ Otevři **`config.js`**. Texty jsou na jednom místě:
 - `topThree` – dvě skupiny skutečných statistik. `source: 'steam'` / `source: 'spotify'` určuje zdroj. Pořadí, názvy, odkazy a podklady pro obrázky vrací serverové funkce. Při výpadku může web zobrazit poslední uložené statistiky. Přístupové údaje do této konfigurace nikdy nepatří.
 - `defaultTheme` – výchozí barvy: `violet`, `aurora` nebo `sunset`. Uložená volba návštěvníka má přednost.
 - `discordId` a `discordUsername` – profil pro živý stav a jméno ke kopírování.
+- `activityKinds` – přesné názvy her (`'game'`, zobrazí se „hraju“) a aplikací (`'app'`, „používám“). Discord je jinak nerozlišuje; neuvedená aktivita se zobrazí jako „běží“.
 
 Po uložení obnov stránku. Texty se vykreslují jako text, HTML do konfigurace nepatří. Uvozovku uvnitř textu zapsaného v jednoduchých uvozovkách napiš jako `\'`.
 
@@ -37,8 +38,9 @@ Po uložení obnov stránku. Texty se vykreslují jako text, HTML do konfigurace
 - `tests/top-three.test.mjs` – ověření serverových funkcí pomocí vestavěného Node test runneru.
 - `js/presence.js` – živý Discord profil, herní aktivita a Spotify přes Lanyard.
 - `js/aurora.js` – polární záře jako WebGL shader; bez WebGL se použije jednodušší záře z `index.html`.
-- `js/effects.js` – kurzor, hvězdné pozadí, warp při scrollu, meteory a hyperprostor.
-- `js/interactions.js` – plovoucí lišta, příjezd sekcí, náklon avataru, magnetická tlačítka, souhvězdí odkazů a easter eggy.
+- `js/effects.js` – kurzor, hvězdné pozadí, sníh, meteory, hyperprostor a warp při scrollu (jen s efekty navíc).
+- `js/sky.js` – nebe podle denní doby v Praze (východ a západ slunce) a sezónní efekty: sníh, ohňostroj, konfety.
+- `js/interactions.js` – plovoucí lišta, příjezd sekcí, náklon avataru, magnetická tlačítka (jen s efekty navíc), souhvězdí odkazů a easter eggy.
 
 ## Ovládání
 
@@ -52,15 +54,21 @@ Mobilní úvod má menší avatar a oběžné kruhy. Při poslechu se Spotify pa
 
 Spotify při poslechu animuje zelený ekvalizér a spodní zvukovou vlnu. Vlna je dekorativní, nereaguje na skutečný zvuk skladby. Herní aktivitu odlišují tři pomalu pulzující tečky v barvě motivu. V klidném režimu jsou indikátory statické a při skrytí karty se jejich pohyb pozastaví.
 
-Jméno v úvodu je obří a prosvítá jím barva motivu. Avatar se naklání za kurzorem a orbity se posouvají v různé hloubce. Při první návštěvě proběhne krátká úvodní sekvence, kterou přeskočí jakýkoli klik nebo klávesa.
+Jméno v úvodu je obří a prosvítá jím barva motivu. Hned pod ním je řádka „právě teď“ z Lanyardu: co hraju, co poslouchám, jinak online, nečinný, nerušit nebo offline s časem posledního signálu. Avatar odkazuje na můj Discord profil, naklání se za kurzorem a orbity se posouvají v různé hloubce. Při první návštěvě proběhne krátká úvodní sekvence, kterou přeskočí jakýkoli klik nebo klávesa.
 
-Sekce O mně je mřížka dlaždic: bio, Spotify, aktivita, živé pražské hodiny, věk s odpočtem do narozenin a stav na Discordu. Když hraje Spotify, celý web převezme barvu z obalu alba; u šedého obalu nebo při chybě čtení zezelená. Po dohrání se vrátí barvy motivu. Při scrollu se v liště objeví stavový pásek s časem a tím, co zrovna dělám.
+Sekce O mně obsahuje bio, Spotify, aktivitu a pod nimi jeden stavový pás: pražský čas s denní osou (barvy podle skutečného východu a západu slunce), LEVEL s proužkem do narozenin a stav na Discordu. Obal i název skladby vedou na Spotify, pokud Lanyard pošle platné ID skladby. Když hraje Spotify, celý web převezme barvu z obalu alba; u šedého obalu nebo při chybě čtení zůstane vybraný motiv. Po dohrání se vrátí barvy motivu. Při scrollu se v liště objeví stavový pásek s časem a tím, co zrovna dělám.
 
 Odkazy tvoří souhvězdí: každá karta má hvězdu v barvě sítě a spojnice se dokreslí při příjezdu. Barvu karty změníš v `index.html` v atributu `style="--brand: R, G, B"`.
 
-Rychlé menu je příkazová paleta: stačí psát (třeba „motiv“, „warp“ nebo „meteory“), šipkami vybrat a potvrdit Enterem. Pár příkazů je schovaných. Pětkrát rychle klikni na avatar nebo zadej Konami kód a uvidíš.
+Rychlé menu je příkazová paleta: stačí psát (třeba „motiv“, „warp“ nebo „meteory“), šipkami vybrat a potvrdit Enterem. Pár příkazů je schovaných (třeba „sníh“, „ohňostroj“, „konfety“). Pětkrát rychle klikni na avatar nebo zadej Konami kód a uvidíš. Jedno kliknutí na avatar otevře Discord profil.
 
-Motiv se mění dole na stránce a zůstane uložený v prohlížeči. **Ctrl+K** (na Macu **⌘K**) otevře rychlé menu; **Esc** ho zavře. Klidný režim vypne pohyb včetně psaní nadpisu. Respektuje se také systémové nastavení omezeného pohybu.
+Výchozí stav je klidný: polární záře, hvězdy a barvy podle hudby. Warp při scrollu, padající meteory, magnetická tlačítka a zrno zapneš příkazem „Efekty navíc“; volba se uloží (`borik-fx`).
+
+Nebe se jemně mění podle pražského času: noc, svítání, den a soumrak mění odstín záře a nádech pozadí. Barvy z obalu alba i ručně vybraný motiv mají přednost. Po ruční volbě motivu nebe ustoupí, dokud ho znovu nezapneš příkazem „Nebe podle denní doby“ (`borik-sky`, `borik-theme-pick`).
+
+Sezónní efekty: v prosinci jemně sněží v hvězdném pozadí, o silvestrovské půlnoci (první čtvrthodina nového roku) se spustí ohňostroj a na moje narozeniny z `config.js` spadnou konfety a u LEVEL se ukáže „LEVEL UP · DNES SLAVÍM“. Vypnout je jde příkazem „Sezónní efekty“ (`borik-season`). Klidný režim a systémové omezení pohybu efekty vypínají; text u LEVEL zůstává.
+
+Motiv se mění dole na stránce; ruční volba zůstane uložená v prohlížeči. **Ctrl+K** (na Macu **⌘K**) otevře rychlé menu; **Esc** ho zavře. Klidný režim vypne pohyb včetně psaní nadpisu. Respektuje se také systémové nastavení omezeného pohybu.
 
 Polární záře v pozadí přebírá barvy vybraného motivu. Na počítači jemně reaguje na myš, na dotykových zařízeních je tlumenější. V klidném režimu zůstane statická a při skrytí karty prohlížeče se její animace pozastaví. Intenzitu upravíš v `css/style.css` u `.aurora-background` pomocí `opacity`.
 

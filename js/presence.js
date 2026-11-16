@@ -1,8 +1,10 @@
-/* Živý profil přes Lanyard: Discord, Spotify a herní aktivita. */
+/* Živý profil přes Lanyard: Discord, Spotify a herní aktivita. Jediné spojení pro celý web. */
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
   const storage = window.siteStorage;
+  const config = window.SITE_CONFIG;
+  $('avatar-core').href = `https://discord.com/users/${encodeURIComponent(config.discordId)}`;
   // Dekorativní vizualizace poslechu; Lanyard neposkytuje zvuková data.
   const wave = document.querySelector('.sound-wave');
   for (let index = 0; index < 48; index++) {
@@ -18,17 +20,32 @@
   }
   document.addEventListener('visibilitychange', updateAnimationVisibility);
   updateAnimationVisibility();
-  const statusNames = { online: 'Online na Discordu', idle: 'Právě někde pryč', dnd: 'Nerušit. Jsem ve svém světě.', offline: 'Právě offline' };
-  const tileNames = { online: 'Online', idle: 'Někde pryč', dnd: 'Nerušit', offline: 'Offline' };
-  const tileNotes = { online: 'Jsem na Discordu. Klidně napiš.', idle: 'Discord běží, já zrovna ne.', dnd: 'Soustředím se. Ozvu se později.', offline: 'Zrovna tu nejsem.' };
-  const activityLabels = { 0: 'aktuálně hraju', 1: 'streamuje', 3: 'sleduje', 5: 'soutěží v' };
+  const statusNames = { online: 'Online', idle: 'Nečinný', dnd: 'Nerušit', offline: 'Offline' };
+  const heroStatus = { online: 'online na Discordu', idle: 'nečinný na Discordu', dnd: 'nerušit', offline: 'offline' };
+  const statusNotes = { online: 'Na Discordu.', idle: 'Discord běží, já ne.', dnd: 'Upozornění vypnutá.', offline: 'Teď nejsem připojený.' };
+  // Discord type 0 (Playing) zahrnuje i aplikace. Rozlišují se jen přesné názvy z config.js;
+  // neznámé aktivity se neodhadují podle slov ani obrázků.
+  const knownActivityKinds = new Map(Object.entries(config.activityKinds || {}).filter(([, kind]) => kind === 'game' || kind === 'app'));
+  const activityLabels = { 1: 'Právě streamuju', 3: 'Právě sleduju', 5: 'Právě soutěžím v' };
+  const activityVerbs = { 1: 'streamuju', 3: 'sleduju', 5: 'soutěžím v' };
+  function describeActivity(activity) {
+    const kind = activity.type === 0 ? knownActivityKinds.get(activity.name) : null;
+    if (kind === 'game') return { kind, label: 'Právě hraju', verb: 'hraju', icon: '🎮' };
+    if (kind === 'app') return { kind, label: 'Právě používám', verb: 'používám', icon: '💻' };
+    return {
+      kind: 'other',
+      label: activityLabels[activity.type] || 'Právě běží',
+      verb: activityVerbs[activity.type] || 'běží',
+      icon: activity.type === 1 || activity.type === 3 ? '📺' : activity.type === 5 ? '🏆' : '◈',
+    };
+  }
   const savedOnline = storage.get('_lo');
   let lastOnline = savedOnline && Number.isFinite(Date.parse(savedOnline)) ? new Date(savedOnline) : null;
   let spotifyTimer, heartbeat, retryTimer, staleTimer, socket;
-  let retry = 0, spotify = null, currentStatus = null;
+  let retry = 0, spotify = null, currentStatus = null, currentActivity = null, available = null;
   const root = document.documentElement;
   const ticker = (key, text) => window.siteTicker?.set(key, text);
-  // Naladění webu: akcent se vezme z obalu alba. Když obrázek nejde přečíst (CORS), použije se zelená.
+  // Naladění webu: akcent se vezme z obalu alba. Když obrázek nejde přečíst nebo je šedý, zůstává motiv.
   let tunedArt = null;
   let tuneEnabled = storage.get('borik-tune') !== 'off';
   const tuneButtons = document.querySelectorAll('[data-tune-toggle]');
@@ -116,16 +133,36 @@
     const seconds = Math.max(0, Math.floor(ms / 1000));
     return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
   };
-  function updateLastSeen() {
-    if (currentStatus !== 'offline' || !lastOnline) {
-      $('lseen').textContent = '';
-      if (currentStatus === 'offline') $('online-note').textContent = 'Poslední signál tenhle prohlížeč nezachytil.';
-      return;
-    }
+  function rememberOnline() {
+    lastOnline = new Date();
+    storage.set('_lo', lastOnline.toISOString());
+  }
+  function lastSeenText() {
+    if (!lastOnline) return '';
     const seconds = Math.max(0, Math.floor((Date.now() - lastOnline) / 1000));
-    const value = seconds < 60 ? `${seconds} s` : seconds < 3600 ? `${Math.floor(seconds / 60)} min` : seconds < 86400 ? `${Math.floor(seconds / 3600)} h` : `${Math.floor(seconds / 86400)} d`;
-    $('lseen').textContent = `Naposledy online před ${value}`;
-    $('online-note').textContent = `Naposledy online před ${value}.`;
+    return seconds < 60 ? 'před chvílí' : seconds < 3600 ? `před ${Math.floor(seconds / 60)} min` : seconds < 86400 ? `před ${Math.floor(seconds / 3600)} h` : `před ${Math.floor(seconds / 86400)} d`;
+  }
+  // Řádka „právě teď“ pod jménem: hra, pak hudba, pak jiná aktivita, nakonec stav.
+  function renderNow() {
+    const dot = $('now-dot'), text = $('hero-now-text');
+    let line;
+    if (available === false) line = 'živý stav je teď nedostupný';
+    else if (!currentStatus) line = 'načítám živý stav…';
+    else if (currentActivity?.presentation.kind === 'game') line = `hraju ${currentActivity.name}`;
+    else if (spotify) line = `poslouchám ${spotify.song || 'bez názvu'}${spotify.artist ? ` – ${spotify.artist}` : ''}`;
+    else if (currentActivity) line = `${currentActivity.presentation.verb} ${currentActivity.name}`;
+    else if (currentStatus === 'offline') line = lastOnline ? `offline · naposledy online ${lastSeenText()}` : 'offline';
+    else line = heroStatus[currentStatus];
+    text.textContent = line; text.title = line;
+    dot.className = `sdot now-dot ${currentStatus && available !== false ? currentStatus : 'unknown'}`;
+    $('hero-now').classList.toggle('is-live', Boolean(currentStatus && available !== false && currentStatus !== 'offline'));
+  }
+  function updateLastSeen() {
+    if (currentStatus && currentStatus !== 'offline') rememberOnline();
+    if (currentStatus === 'offline') {
+      $('online-note').textContent = lastOnline ? `Naposledy ${lastSeenText()}.` : 'Poslední signál tenhle prohlížeč nezachytil.';
+    }
+    renderNow();
   }
   function updateProgress() {
     if (!spotify) return;
@@ -134,8 +171,31 @@
     $('sp-fill').style.width = `${duration > 0 ? elapsed / duration * 100 : 0}%`;
     $('sp-el').textContent = formatTime(elapsed); $('sp-tot').textContent = formatTime(duration);
   }
+  function updateSpotifyLinks(track) {
+    // Spotify track ID je 22 znaků base62. Neúplné údaje nesmějí ponechat starý cíl.
+    const validId = typeof track?.track_id === 'string' && /^[A-Za-z0-9]{22}$/.test(track.track_id);
+    const url = validId ? `https://open.spotify.com/track/${track.track_id}` : null;
+    for (const id of ['sp-art-link', 'sp-song', 'sp-link']) {
+      const link = $(id);
+      if (url) {
+        link.href = url;
+        link.setAttribute('aria-label', `Otevřít skladbu ${track.song || 'bez názvu'}${track.artist ? ` – ${track.artist}` : ''} ve Spotify v nové kartě`);
+      } else {
+        link.removeAttribute('href');
+        link.removeAttribute('aria-label');
+      }
+    }
+    $('sp-link').hidden = !url;
+  }
   function setImage(element, source, fallback) {
-    if (!source || element.getAttribute('src') === source) return;
+    if (source && element.getAttribute('src') === source && (!element.complete || element.naturalWidth > 0)) return;
+    element.classList.remove('on');
+    if (fallback) fallback.classList.remove('gone');
+    if (!source) {
+      element.onload = element.onerror = null;
+      element.removeAttribute('src');
+      return;
+    }
     element.onload = () => { element.classList.add('on'); if (fallback) fallback.classList.add('gone'); };
     element.onerror = () => { element.classList.remove('on'); if (fallback) fallback.classList.remove('gone'); };
     element.src = source;
@@ -148,65 +208,72 @@
     return null;
   }
   function showUnavailable() {
-    clearInterval(spotifyTimer); spotify = null; currentStatus = null;
-    clearTune(); ticker('status', 'signál hledám'); ticker('game', ''); ticker('music', '');
+    clearInterval(spotifyTimer); spotify = null; currentStatus = null; currentActivity = null; available = false;
+    clearTune(); ticker('status', 'bez signálu'); ticker('game', ''); ticker('music', '');
+    updateSpotifyLinks(null);
     $('online-dot').className = 'sdot unknown tile-sdot'; $('online-value').textContent = 'Bez signálu'; $('online-note').textContent = 'Zkouším se znovu spojit.';
     $('sp-card').closest('.music-panel').classList.remove('is-playing');
-    $('presence-status').textContent = 'Živý stav je teď nedostupný'; $('sdot').className = 'sdot unknown'; $('lseen').textContent = '';
+    $('sdot').className = 'sdot unknown';
     $('sp-card').style.display = 'none'; $('sp-idle').style.display = '';
-    $('sp-idle-title').textContent = 'Malá pauza v signálu.'; $('sp-idle-detail').textContent = 'Spotify stav se teď nepodařilo načíst.';
+    $('sp-idle-title').textContent = 'Spotify není dostupné'; $('sp-idle-detail').textContent = 'Stav poslechu se teď nepodařilo načíst.';
     $('act-card').style.display = 'none'; $('act-idle').style.display = '';
-    $('act-idle-title').textContent = 'Signál na cestě.'; $('act-idle-detail').textContent = 'Zkouším znovu připojit Discord.';
+    $('act-card').closest('.activity-panel').classList.remove('is-active');
+    $('act-idle-title').textContent = 'Discord není dostupný'; $('act-idle-detail').textContent = 'Zkouším se znovu připojit.';
+    renderNow();
   }
   function applyPresence(data) {
-    clearTimeout(staleTimer); retry = 0;
+    clearTimeout(staleTimer); retry = 0; available = true;
     const user = data.discord_user;
-    currentStatus = data.discord_status || 'offline';
-    $('presence-status').textContent = statusNames[currentStatus] || statusNames.offline;
-    $('sdot').className = `sdot ${Object.hasOwn(statusNames, currentStatus) ? currentStatus : 'offline'}`;
-    if (user?.avatar) {
-      const extension = user.avatar.startsWith('a_') ? 'gif' : 'png';
-      setImage($('av'), `https://cdn.discordapp.com/avatars/${encodeURIComponent(user.id)}/${encodeURIComponent(user.avatar)}.${extension}?size=256`, $('av-fb'));
-    }
-    const knownStatus = Object.hasOwn(statusNames, currentStatus) ? currentStatus : 'offline';
-    $('online-dot').className = `sdot ${knownStatus} tile-sdot`;
-    $('online-value').textContent = tileNames[knownStatus];
-    $('online-note').textContent = tileNotes[knownStatus];
-    ticker('status', tileNames[knownStatus].toLocaleLowerCase('cs'));
-    if (currentStatus !== 'offline') { lastOnline = new Date(); storage.set('_lo', lastOnline.toISOString()); }
-    updateLastSeen();
+    const nextStatus = Object.hasOwn(statusNames, data.discord_status) ? data.discord_status : 'offline';
+    // Offline přechod patří k aktuálnímu okamžiku, ne k poslední změně aktivity.
+    if (currentStatus && currentStatus !== 'offline' && nextStatus === 'offline') rememberOnline();
+    currentStatus = nextStatus;
+    $('sdot').className = `sdot ${currentStatus}`;
+    const extension = user?.avatar?.startsWith('a_') ? 'gif' : 'png';
+    const avatarSource = user?.avatar ? `https://cdn.discordapp.com/avatars/${encodeURIComponent(user.id)}/${encodeURIComponent(user.avatar)}.${extension}?size=256` : null;
+    setImage($('av'), avatarSource, $('av-fb'));
+    $('online-dot').className = `sdot ${currentStatus} tile-sdot`;
+    $('online-value').textContent = statusNames[currentStatus];
+    $('online-note').textContent = statusNotes[currentStatus];
+    ticker('status', statusNames[currentStatus].toLocaleLowerCase('cs'));
+
     const activity = data.activities?.find(item => item.type !== 2 && item.type !== 4);
+    currentActivity = activity ? { name: activity.name, presentation: describeActivity(activity) } : null;
     $('act-card').style.display = activity ? 'flex' : 'none'; $('act-idle').style.display = activity ? 'none' : '';
-    $('act-idle-title').textContent = 'Mezi dvěma světy.'; $('act-idle-detail').textContent = 'Zrovna nic nehraju.';
-    ticker('game', activity ? `${activity.type === 0 ? 'hraju' : activityLabels[activity.type] || 'dělám'} ${activity.name}` : '');
+    $('act-card').closest('.activity-panel').classList.toggle('is-active', Boolean(activity));
+    $('act-idle-title').textContent = 'Žádná aktivita'; $('act-idle-detail').textContent = 'Discord teď žádnou aktivitu neukazuje.';
+    ticker('game', currentActivity ? `${currentActivity.presentation.verb} ${activity.name}` : '');
     if (activity) {
-      $('act-label').textContent = activityLabels[activity.type] || 'aktuálně'; $('act-name').textContent = activity.name; $('act-name').title = activity.name;
+      const { presentation } = currentActivity;
+      $('act-label').textContent = presentation.label; $('act-name').textContent = activity.name; $('act-name').title = activity.name;
       $('act-detail').textContent = activity.details || activity.state || '';
       const wrap = $('act-icon-wrap');
-      const fallback = activity.type === 3 ? '📺' : activity.type === 5 ? '🏆' : '🎮';
+      const fallback = presentation.icon;
       wrap.textContent = fallback;
       const source = activityImage(activity);
       if (source) {
         const image = document.createElement('img'); image.className = 'act-thumb'; image.alt = '';
-        image.onerror = () => { wrap.textContent = fallback; }; image.src = source; wrap.replaceChildren(image);
+        image.onerror = () => { if (image.parentElement === wrap) wrap.textContent = fallback; };
+        image.src = source; wrap.replaceChildren(image);
       }
     }
+
     clearInterval(spotifyTimer);
     spotify = data.spotify?.timestamps ? data.spotify : null;
+    updateSpotifyLinks(spotify);
     $('sp-card').closest('.music-panel').classList.toggle('is-playing', Boolean(spotify));
     $('sp-card').style.display = spotify ? 'block' : 'none'; $('sp-idle').style.display = spotify ? 'none' : '';
-    $('sp-idle-title').textContent = 'Chvilka ticha.'; $('sp-idle-detail').textContent = 'Zrovna nic neposlouchám.';
-    if (!spotify) { clearTune(); ticker('music', ''); }
+    $('sp-idle-title').textContent = 'Teď tu nic nehraje'; $('sp-idle-detail').textContent = 'Spotify teď žádný poslech neukazuje.';
+    if (!spotify) { clearTune(); ticker('music', ''); $('sp-backdrop').style.removeProperty('background-image'); }
     if (spotify) {
       $('sp-song').textContent = spotify.song; $('sp-song').title = spotify.song; $('sp-artist').textContent = spotify.artist;
       setImage($('sp-art'), spotify.album_art_url);
       tuneFromArt(spotify.album_art_url);
-      $('sp-backdrop').style.backgroundImage = `url("${encodeURI(spotify.album_art_url)}")`;
+      if (spotify.album_art_url) $('sp-backdrop').style.backgroundImage = `url("${encodeURI(spotify.album_art_url)}")`;
       ticker('music', `poslouchám ${spotify.song}`);
-      $('sp-link').hidden = !spotify.track_id;
-      if (spotify.track_id) $('sp-link').href = `https://open.spotify.com/track/${encodeURIComponent(spotify.track_id)}`;
       updateProgress(); spotifyTimer = setInterval(updateProgress, 1000);
     }
+    updateLastSeen();
   }
   function connect() {
     clearTimeout(retryTimer); clearTimeout(staleTimer);
@@ -218,7 +285,7 @@
       if (payload.op === 1) {
         clearInterval(heartbeat);
         heartbeat = setInterval(() => { if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ op: 3 })); }, payload.d.heartbeat_interval);
-        socket.send(JSON.stringify({ op: 2, d: { subscribe_to_id: window.SITE_CONFIG.discordId } }));
+        socket.send(JSON.stringify({ op: 2, d: { subscribe_to_id: config.discordId } }));
       }
       if (payload.op === 0 && payload.d) applyPresence(payload.d);
     };
@@ -228,5 +295,7 @@
     };
     socket.onerror = () => socket.close();
   }
+  renderNow();
   connect(); setInterval(updateLastSeen, 60_000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) updateLastSeen(); });
 })();

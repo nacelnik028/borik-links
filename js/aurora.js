@@ -73,7 +73,8 @@
       const parts = style.getPropertyValue(name).split(',').map(value => Number.parseFloat(value) / 255);
       if (parts.length === 3 && parts.every(Number.isFinite)) parts.forEach((value, index) => { target[index] = value; });
     };
-    parse('--accent-rgb', targetA); parse('--secondary-rgb', targetB);
+    // --aurora-a-rgb / --aurora-b-rgb jsou ve výchozím stavu barvy motivu; nebe podle denní doby je jemně posouvá.
+    parse('--aurora-a-rgb', targetA); parse('--aurora-b-rgb', targetB);
   }
   function resize() {
     // Záře je měkká, takže stačí zlomek rozlišení; šetří to GPU hlavně na mobilech.
@@ -124,6 +125,7 @@
   window.addEventListener('resize', () => { resize(); if (window.siteCalm) render(); });
   window.addEventListener('motionchange', restart);
   window.addEventListener('themechange', () => { readColors(); if (window.siteCalm) restart(); });
+  window.addEventListener('skychange', () => { readColors(); if (window.siteCalm) restart(); });
   document.addEventListener('visibilitychange', restart);
   root.classList.add('has-gl');
   restart();

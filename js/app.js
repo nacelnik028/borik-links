@@ -40,22 +40,22 @@
     $('interests').append(tag);
   }
 
-  // Dlaždice věku: roky, dny od posledních narozenin a postup k dalším.
+  // Pás: level (věk), dny od posledních narozenin a postup k dalším.
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const lastBirthday = new Date(year + age, month - 1, day);
   const nextBirthday = new Date(year + age + 1, month - 1, day);
   const dayMs = 86_400_000;
   const daysSince = Math.max(0, Math.round((today - lastBirthday) / dayMs));
   const daysLeft = Math.max(0, Math.round((nextBirthday - today) / dayMs));
-  const plural = (count, one, few, many) => count === 1 ? one : count >= 2 && count <= 4 ? few : many;
+  const birthdayToday = daysSince === 0;
+  window.siteBirthday = birthdayToday;
   $('age-years').textContent = String(age);
   $('age-years').dataset.count = String(age);
-  $('age-next').textContent = daysLeft === 0 || daysSince === 0 ? 'LEVEL UP' : `LVL ${age + 1} ZA ${daysLeft} D`;
+  $('age-next').textContent = birthdayToday ? 'LEVEL UP · DNES SLAVÍM' : `LVL ${age + 1} ZA ${daysLeft} D`;
+  $('age-next').title = birthdayToday ? 'Dneska mám narozeniny.' : `${daysSince} z ${daysSince + daysLeft} dní do levelu ${age + 1}.`;
+  $('age-years').closest('.strip-cell').classList.toggle('is-birthday', birthdayToday);
   $('online-user').textContent = config.discordUsername;
-  $('age-note').textContent = daysLeft === 0 || daysSince === 0
-    ? 'Dneska slavím. Dort vítán.'
-    : `${daysSince} z ${daysSince + daysLeft} dní do levelu ${age + 1}.`;
-  $('age-fill').style.setProperty('--age-progress', (daysSince / Math.max(1, daysSince + daysLeft)).toFixed(3));
+  $('age-fill').style.setProperty('--age-progress', (birthdayToday ? 1 : daysSince / Math.max(1, daysSince + daysLeft)).toFixed(3));
 
   // Stavový pásek v liště skládají dohromady hodiny a živá data.
   const tickerParts = { time: '', status: '', game: '', music: '' };
@@ -69,18 +69,21 @@
   const media = matchMedia('(prefers-reduced-motion: reduce)');
   const themes = ['violet', 'aurora', 'sunset'];
   const themeLabel = theme => theme.charAt(0).toUpperCase() + theme.slice(1);
-  function applyTheme(theme) {
+  function applyTheme(theme, manual) {
     root.dataset.theme = theme;
     document.querySelectorAll('[data-theme-choice]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.themeChoice === theme)));
-    storage.set('borik-theme', theme);
+    // Ukládá se jen ruční volba; borik-theme-pick říká nebi podle denní doby, že má motiv přednost.
+    if (manual) { storage.set('borik-theme', theme); storage.set('borik-theme-pick', '1'); }
     window.dispatchEvent(new Event('themechange'));
+    if (manual) window.dispatchEvent(new Event('themepick'));
   }
   // Při kliknutí se nová barva rozlije kruhem z místa kliknutí (View Transitions API).
   function setTheme(theme, origin) {
     if (!themes.includes(theme)) theme = 'violet';
-    // Ruční volba motivu má přednost před barvou z obalu alba.
-    const untune = Boolean(origin) && root.classList.contains('is-tuned');
-    const change = () => { applyTheme(theme); if (untune) window.siteTune?.set(false, true, false); };
+    // Ruční volba motivu (vždy s místem kliknutí) má přednost před barvou z obalu alba i před nebem.
+    const manual = Boolean(origin);
+    const untune = manual && root.classList.contains('is-tuned');
+    const change = () => { applyTheme(theme, manual); if (untune) window.siteTune?.set(false, true, false); };
     if (untune) setTimeout(() => toast(`Motiv ${themeLabel(theme)}. Barvy podle hudby jsou pro tuhle návštěvu vypnuté.`), 50);
     const animated = origin && document.startViewTransition && !window.siteCalm && (untune || root.dataset.theme !== theme);
     if (!animated) { change(); return; }
@@ -105,9 +108,12 @@
   }
 
   let userCalm = storage.get('borik-calm') === 'true';
+  // Efekty navíc (warp při scrollu, padající meteory, magnet, zrno) jsou ve výchozím stavu vypnuté.
+  let extraEffects = storage.get('borik-fx') === 'on';
   function updateMotion() {
     window.siteCalm = media.matches || userCalm;
     root.classList.toggle('calm', window.siteCalm);
+    root.classList.toggle('fx', extraEffects && !window.siteCalm);
     $('motion-toggle').setAttribute('aria-pressed', String(window.siteCalm));
     $('motion-toggle').textContent = window.siteCalm ? '◌ Klidný režim zapnutý' : '◌ Klidný režim';
     window.dispatchEvent(new Event('motionchange'));
@@ -115,6 +121,11 @@
   function toggleCalm() {
     if (media.matches) { toast('Omezení animací je zapnuté v nastavení tvého zařízení.'); return; }
     userCalm = !userCalm; storage.set('borik-calm', String(userCalm)); updateMotion();
+  }
+  function toggleEffects() {
+    extraEffects = !extraEffects; storage.set('borik-fx', extraEffects ? 'on' : 'off'); updateMotion();
+    if (window.siteCalm) toast(extraEffects ? 'Efekty navíc zapnuté. Projeví se, až vypneš klidný režim.' : 'Efekty navíc vypnuté.');
+    else toast(extraEffects ? 'Efekty navíc zapnuté: warp při scrollu, meteory, magnet a zrno.' : 'Efekty navíc vypnuté. Zůstává záře a hvězdy.');
   }
   updateMotion(); media.addEventListener('change', updateMotion);
   $('motion-toggle').addEventListener('click', toggleCalm);
@@ -172,6 +183,12 @@
   }
   const commands = {
     calm: () => toggleCalm(),
+    fx: () => toggleEffects(),
+    sky: () => window.siteSky?.toggle(),
+    season: () => window.siteSeason?.toggle(),
+    snow: () => window.siteSeason?.snow(),
+    fireworks: () => window.siteSeason?.fireworks(),
+    confetti: () => window.siteSeason?.confetti(),
     warp: () => { if (window.siteCalm) toast('V klidném režimu motory nestartuju.'); else { window.siteEffects?.hyperspace(); toast('Warp pohon zapnut. Drž se.'); } },
     meteors: () => { if (window.siteCalm) toast('V klidném režimu je obloha v klidu.'); else { window.siteEffects?.meteorShower(); toast('Meteorický roj. Něco si přej.'); } },
     top: () => window.scrollTo({ top: 0, behavior: window.siteCalm ? 'auto' : 'smooth' }),
@@ -192,7 +209,7 @@
     }
     dialog.close(); commands[name]?.();
   }
-  window.siteActions = { toast, setTheme, toggleCalm, openMenu, runCommand: name => commands[name]?.() };
+  window.siteActions = { toast, setTheme, toggleCalm, toggleEffects, openMenu, runCommand: name => commands[name]?.() };
   document.querySelectorAll('[data-open-menu]').forEach(button => button.addEventListener('click', openMenu));
   $('close-menu').addEventListener('click', () => dialog.close());
   dialog.addEventListener('click', event => {
@@ -262,9 +279,8 @@
   window.addEventListener('motionchange', restartTyping);
   document.addEventListener('visibilitychange', restartTyping);
 
-  // Pražský čas: živé hodiny v dlaždici, v patičce bia a ve stavovém pásku.
+  // Pražský čas: živé hodiny v pásu a ve stavovém pásku lišty.
   const clockFormat = new Intl.DateTimeFormat('cs-CZ', { timeZone: 'Europe/Prague', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-  const clockNotes = [[5, 'Hluboká noc. Asi ještě nespím.'], [9, 'Ráno. Pomalý rozjezd.'], [15, 'Přes den. Nejspíš škola.'], [19, 'Odpoledne. Čas na hry.'], [23, 'Večer. Sluchátka na uších.'], [24, 'Pozdní večer. Ještě jednu písničku.']];
   const dateFormat = new Intl.DateTimeFormat('cs-CZ', { timeZone: 'Europe/Prague', weekday: 'short', day: 'numeric', month: 'numeric' });
   let lastMinute = '';
   function updateClock() {
@@ -275,12 +291,11 @@
     if (minute === lastMinute) return;
     lastMinute = minute;
     $('clock-value').firstChild.textContent = minute;
-    $('clock-date').textContent = `PRAHA · ${dateFormat.format(new Date()).toLocaleUpperCase('cs')}`;
+    $('clock-date').textContent = dateFormat.format(new Date()).toLocaleUpperCase('cs');
     // Tečka na denní ose: půlnoc vlevo, poledne uprostřed.
     $('day-dot').style.setProperty('--day', ((Number(parts.hour) % 24 * 60 + Number(parts.minute)) / 1440).toFixed(4));
-    $('local-time').textContent = `${minute} · MŮJ ČAS`;
-    $('clock-note').textContent = clockNotes.find(([hour]) => Number(parts.hour) % 24 < hour)[1];
     window.siteTicker.set('time', `Praha ${minute}`);
+    window.dispatchEvent(new Event('minutechange'));
   }
   updateClock(); setInterval(updateClock, 1000);
   document.addEventListener('visibilitychange', updateClock);
